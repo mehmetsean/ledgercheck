@@ -3,6 +3,7 @@
 import csv
 import html
 import io
+import os
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -26,7 +27,7 @@ FLAG_NOTE = (
 )
 FILES = ("items_to_check.csv", "analysis.md", "analysis.html", "README.txt")
 CSV_HEADER = ["rule", "table", "unit_id", "row_ids", "reason"]
-RISKY_START = ("=", "+", "-", "@", "\t", "\r")
+RISKY_START = ("=", "+", "-", "@", "\t", "\r", "\n")
 
 README = f"""\
 ledgercheck output (an analysis)
@@ -45,9 +46,12 @@ Files in this folder:
 
 
 def safe_cell(text: str) -> str:
-    if text.startswith(RISKY_START):
-        return "'" + text
-    return text
+    """Neutralize spreadsheet formulas and show control characters as text."""
+    risky = text.lstrip(" ").startswith(RISKY_START)
+    clean = "".join(
+        f"\\x{ord(c):02x}" if ord(c) < 0x20 or ord(c) == 0x7F else c for c in text
+    )
+    return "'" + clean if risky else clean
 
 
 def _csv_text(result: AnalysisResult) -> str:
@@ -84,6 +88,11 @@ def _input_lines(result: AnalysisResult) -> list[str]:
     for table, count in result.table_rows.items():
         text = "not in the input" if count is None else f"{count} rows"
         out.append(f"{table}: {text}")
+    if result.table_rows.get("journal_lines") is not None:
+        out.append(
+            "journal entry ids with no trailing digits, skipped by "
+            f"entry_number_gap: {result.unnumbered_ids}"
+        )
     return out
 
 
@@ -190,23 +199,48 @@ def page(result: AnalysisResult) -> str:
     )
 
 
+def check_out_folder(out: Path, data: Path) -> None:
+    """Refuse an output folder that is the data folder or inside it."""
+    out_path, data_path = out.resolve(), data.resolve()
+    if out_path == data_path or data_path in out_path.parents:
+        raise ValueError(
+            f"{ascii(str(out))}: output folder must not be inside the data"
+        )
+
+
 def _prepare(out: Path, force: bool) -> None:
     if out.exists() and not out.is_dir():
-        raise ValueError(f"{out} is a file, not a folder")
+        raise ValueError(f"{ascii(str(out))} is a file, not a folder")
     out.mkdir(parents=True, exist_ok=True)
-    if not any(out.iterdir()):
+    names = sorted(p.name for p in out.iterdir())
+    if not names:
         return
     if not force:
-        raise ValueError(f"{out} is not empty, use --force to replace the output files")
-    for name in FILES:
-        target = out / name
-        if target.is_file() or target.is_symlink():
-            target.unlink()
+        raise ValueError(
+            f"{ascii(str(out))} is not empty, use --force to replace the output files"
+        )
+    other = [n for n in names if n not in FILES]
+    if other:
+        raise ValueError(
+            f"{ascii(str(out))} holds files that are not ledgercheck output, "
+            f"first one {ascii(other[0][:40])}. Use an empty folder"
+        )
+
+
+def _write(out: Path, name: str, text: str) -> None:
+    temp = out / f".{name}.tmp"
+    try:
+        with temp.open("w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        os.replace(temp, out / name)
+    finally:
+        if temp.exists():
+            temp.unlink()
 
 
 def write_report(out: Path, result: AnalysisResult, force: bool = False) -> None:
     _prepare(out, force)
-    (out / "items_to_check.csv").write_text(_csv_text(result), "utf-8", newline="")
-    (out / "analysis.md").write_text(markdown(result), "utf-8")
-    (out / "analysis.html").write_text(page(result), "utf-8")
-    (out / "README.txt").write_text(README, "utf-8")
+    _write(out, "items_to_check.csv", _csv_text(result))
+    _write(out, "analysis.md", markdown(result))
+    _write(out, "analysis.html", page(result))
+    _write(out, "README.txt", README)

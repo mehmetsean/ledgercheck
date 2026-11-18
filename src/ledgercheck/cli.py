@@ -6,9 +6,9 @@ from pathlib import Path
 
 from .analyze import analyze
 from .config import load_column_map, load_settings
-from .io import read_folder
+from .io import plain, read_folder
 from .models import Settings
-from .report import write_report
+from .report import check_out_folder, write_report
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -24,12 +24,14 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _run(args: argparse.Namespace) -> None:
+    check_out_folder(args.out, args.data)
     cmap = load_column_map(args.column_map) if args.column_map else None
     settings = load_settings(args.settings) if args.settings else Settings()
     ledger = read_folder(args.data, cmap)
     result = analyze(ledger, settings)
     write_report(args.out, result, args.force)
-    print(f"Wrote the analysis to {args.out}, {len(result.flags)} items to check")
+    where = plain(str(args.out))
+    print(f"Wrote the analysis to {where}, {len(result.flags)} items to check")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -37,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         _run(args)
     except (ValueError, OSError) as e:
-        print(f"error: {e}", file=sys.stderr)
+        print(f"error: {plain(str(e))}", file=sys.stderr)
         return 2
+    except (MemoryError, OverflowError, RecursionError):
+        print("ledgercheck: out of memory or numbers too large", file=sys.stderr)
+        return 1
     return 0

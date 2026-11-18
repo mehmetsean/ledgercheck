@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 
 from helpers import invoice, ledger, line
-
 from ledgercheck.analyze import analyze
 from ledgercheck.models import Flag, Settings
 from ledgercheck.rules import natural_key, run_rules
