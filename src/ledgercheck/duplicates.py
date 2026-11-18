@@ -103,6 +103,7 @@ def _records(ledger: Ledger) -> list[_Rec]:
     for p in payments:
         number = numbers.get(p.invoice_id, "")
         key = (p.vendor_id, number, p.amount_cents) if number else None
+        number = normalize_number(number)
         name = names.get(p.vendor_id, "")
         out.append(
             _Rec(
@@ -198,7 +199,7 @@ def _fuzzy_pair(
     meter.add(COMPARE_COST)
     if a.name == "" or b.name == "" or _is_exact(a, b):
         return None
-    x, y = normalize_number(a.number), normalize_number(b.number)
+    x, y = a.number, b.number
     if x == "" or y == "":
         if s.invoice_threshold > 0:
             return None
