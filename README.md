@@ -1,5 +1,5 @@
 # ledgercheck
-Local-first journal entry and duplicate payment checks. Precision and recall are measured on synthetic data (synthbiz) with the evaluate command.
+Local-first journal entry and duplicate payment checks. Precision and recall will be measured on synthetic data (synthbiz) with the evaluate command.
 
 Work in progress. The plan is in docs/spec.md.
 
