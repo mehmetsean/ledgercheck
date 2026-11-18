@@ -26,10 +26,10 @@ The first form scores one labeled folder. The second generates each seed in memo
 
 ### How to read the numbers
 
-- Recall and precision of 1.0 for weekend_posting, holiday_posting, no_approver, period_mismatch, duplicate_exact and duplicate_fuzzy are expected. synthbiz's clean ledger has no weekend, holiday, unapproved or odd-period entries, and its near duplicates keep the amount and the invoice number. These numbers show that the rules match how synthbiz plants anomalies. They do not show how well the rules work on real books.
+- Recall and precision of 1.0 for weekend_posting, holiday_posting, no_approver, period_mismatch, duplicate_exact and duplicate_fuzzy come from how synthbiz plants anomalies, not from accuracy on real books. synthbiz's clean ledger has no weekend, holiday, unapproved or odd-period entries, and its near duplicates keep the amount and the invoice number. These numbers show that the rules match how synthbiz plants anomalies. They do not show how well the rules work on real books.
 - A zero-width interval means every report seed scored the same. It is not high certainty.
-- Only round_amount and split_under_limit show false alarms, because ordinary entries and invoices overlap them. The split precision comes from normal in-band invoices of one vendor, not from the planted rate.
-- rare_poster at the default rare_share (0.05) misses most planted anomalies on synthbiz data. The tuned row shows a higher rare_share.
+- Round_amount and split_under_limit show false alarms on synthbiz. The clean-ledger commands below show a few (1 and 2 items with the default seed).
+- On the shipped large run, rare_poster at the default rare_share (0.05) has recall 0.2402, so it misses most planted anomalies. The tuned row uses a higher rare_share (0.1).
 - Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The generator is `_near_duplicate` in src/synthbiz/anomalies.py of synthbiz at commit 47a763a79681805e7dcb992c7d47e5166a83aa09, the commit pinned in pyproject.toml.
 - "Caught by any scored rule" counts a labeled unit as caught when a flag from any of the nine scored rules lands on it. entry_number_gap and benford_first_digit are not scored.
 
