@@ -15,7 +15,7 @@ from ledgercheck.benford import (
 def benford_sample(n: int) -> list[int]:
     out: list[int] = []
     for d in range(1, 10):
-        out += [d * 1000 + i for i in range(round(n * EXPECTED[d - 1]))]
+        out += [d * 10**6 + i * 13 for i in range(round(n * EXPECTED[d - 1]))]
     return out
 
 
@@ -40,7 +40,7 @@ def test_conforming_sample_is_ok() -> None:
 
 
 def test_uniform_digits_do_not_conform() -> None:
-    values = [d * 1000 + i for d in range(1, 10) for i in range(700)]
+    values = [d * 10**6 + i * 13 for d in range(1, 10) for i in range(700)]
     result = benford_first_digit(values, "amount_cents")
     assert result.status == "ok"
     assert result.mad_label == "nonconformity"
