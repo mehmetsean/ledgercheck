@@ -1,6 +1,6 @@
-# 10. The planned demo serves Pyodide and the wheels from its own origin
+# 10. The demo serves Pyodide and the wheels from its own origin
 
-Status: Accepted. The demo is planned and not built yet.
+Status: Accepted. Built, see record 12 for how the files get into the site.
 
 ## Context
 
@@ -17,4 +17,4 @@ Options considered:
 
 ## Consequences
 
-Upgrading Pyodide means copying new files into the site. The Pages size limit and the load time on a phone are open risks. If the core files are too large, a pinned CDN is the fallback, and a new record must say why.
+Upgrading Pyodide means changing the version, the URL and the sha256 in scripts/build_site.py. The built site is about 13.6 MB. The Pages size limit and the load time on a phone are open risks. If the core files are too large, a pinned CDN is the fallback, and a new record must say why.

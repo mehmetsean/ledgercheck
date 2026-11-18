@@ -15,6 +15,9 @@ All notable changes are listed here. The format follows Keep a Changelog.
 
 ### Added
 
+- The in-browser demo in site/, built by scripts/build_site.py. It runs synthetic data and your own CSV files in the page with Pyodide served from the Pages origin, and downloads items_to_check.csv. A browser test in CI fails on any request to another host. See docs/adr/0012-demo-unpacks-wheels-and-fetches-pyodide-at-build-time.md.
+- ledgercheck.demo, the entry points the page calls.
+- The Pages workflow, and a browser job that the aggregate ci job needs.
 - Scoring of typo_duplicate_payment. duplicate_fuzzy now scores against near_duplicate_payment and typo_duplicate_payment.
 - The evaluation lists label types that no rule scores, and never fails on them.
 - Rules core: weekend_posting, holiday_posting, round_amount, rare_poster, no_approver, period_mismatch, split_under_limit and entry_number_gap, with a plain reason for every flag.
