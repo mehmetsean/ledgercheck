@@ -53,11 +53,6 @@ DEFAULT_RATE = 0.02
 INSTALL_HINT = (
     'synthbiz is not installed, install the eval extra: pip install "ledgercheck[eval]"'
 )
-SYNTHETIC = "measured on synthetic data (synthbiz)"
-FUZZY_LIMIT = (
-    "synthbiz near duplicates differ only in vendor suffix or punctuation and "
-    "keep the invoice number, so measured fuzzy recall says nothing about typos."
-)
 
 Unit = tuple[str, str]
 

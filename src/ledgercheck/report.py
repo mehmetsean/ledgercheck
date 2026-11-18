@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .analyze import AnalysisResult
 from .benford import BenfordResult
+from .measured import RATE_HEAD, load_measured, rate_rows, setup_lines
 from .rules import RULES
 
 NOTICE = (
@@ -132,6 +133,28 @@ def _dup_line(result: AnalysisResult) -> str:
     )
 
 
+def _measured_markdown() -> list[str]:
+    doc = load_measured()
+    out = ["## Measured on synthetic data", ""]
+    if doc is None:
+        return out + ["No measured rates are shipped with this copy.", ""]
+    for text in setup_lines(doc):
+        out += [text, ""]
+    out += ["| " + " | ".join(RATE_HEAD) + " |"]
+    out += ["| " + " | ".join("---" for _ in RATE_HEAD) + " |"]
+    out += ["| " + " | ".join(row) + " |" for row in rate_rows(doc)]
+    return out + [""]
+
+
+def _measured_html() -> list[str]:
+    doc = load_measured()
+    out = ["<h2>Measured on synthetic data</h2>"]
+    if doc is None:
+        return out + ["<p>No measured rates are shipped with this copy.</p>"]
+    out += [f"<p>{h(text)}</p>" for text in setup_lines(doc)]
+    return out + [html_table(RATE_HEAD, rate_rows(doc))]
+
+
 def markdown(result: AnalysisResult) -> str:
     out = ["# ledgercheck analysis", "", NOTICE, "", DISCLAIMER, "", FLAG_NOTE, ""]
     out += ["## Input", ""] + [f"- {line}" for line in _input_lines(result)] + [""]
@@ -142,7 +165,8 @@ def markdown(result: AnalysisResult) -> str:
         "| --- | --- | --- |",
     ]
     out += [f"| {r} | {n} | {note} |" for r, n, note in _rule_rows(result)]
-    out += ["", _dup_line(result), "", "## Benford first digit", ""]
+    out += ["", _dup_line(result), ""] + _measured_markdown()
+    out += ["## Benford first digit", ""]
     if not result.benford:
         out += ["SKIP: no amount field in the input.", ""]
     for b in result.benford:
@@ -154,14 +178,14 @@ def markdown(result: AnalysisResult) -> str:
     return "\n".join(out)
 
 
-def _h(text: str) -> str:
+def h(text: str) -> str:
     return html.escape(text, quote=True)
 
 
-def _table(head: list[str], rows: Sequence[Sequence[str]]) -> str:
-    out = ["<table>", "<tr>" + "".join(f"<th>{_h(c)}</th>" for c in head) + "</tr>"]
+def html_table(head: list[str], rows: Sequence[Sequence[str]]) -> str:
+    out = ["<table>", "<tr>" + "".join(f"<th>{h(c)}</th>" for c in head) + "</tr>"]
     for row in rows:
-        out.append("<tr>" + "".join(f"<td>{_h(c)}</td>" for c in row) + "</tr>")
+        out.append("<tr>" + "".join(f"<td>{h(c)}</td>" for c in row) + "</tr>")
     out.append("</table>")
     return "\n".join(out)
 
@@ -169,22 +193,23 @@ def _table(head: list[str], rows: Sequence[Sequence[str]]) -> str:
 def page(result: AnalysisResult) -> str:
     body = [
         "<h1>ledgercheck analysis</h1>",
-        f"<p>{_h(NOTICE)}</p>",
-        f"<p>{_h(DISCLAIMER)}</p>",
-        f"<p>{_h(FLAG_NOTE)}</p>",
+        f"<p>{h(NOTICE)}</p>",
+        f"<p>{h(DISCLAIMER)}</p>",
+        f"<p>{h(FLAG_NOTE)}</p>",
         "<h2>Input</h2>",
-        "<ul>" + "".join(f"<li>{_h(x)}</li>" for x in _input_lines(result)) + "</ul>",
+        "<ul>" + "".join(f"<li>{h(x)}</li>" for x in _input_lines(result)) + "</ul>",
         "<h2>Items to check per rule</h2>",
-        _table(["Rule", "Items", "Note"], _rule_rows(result)),
-        f"<p>{_h(_dup_line(result))}</p>",
+        html_table(["Rule", "Items", "Note"], _rule_rows(result)),
+        f"<p>{h(_dup_line(result))}</p>",
+        *_measured_html(),
         "<h2>Benford first digit</h2>",
     ]
     if not result.benford:
         body.append("<p>SKIP: no amount field in the input.</p>")
     for b in result.benford:
-        body.append(f"<p>{_h(_benford_head(b))}</p>")
-        body.append(_table(["Digit", "Count", "Share", "Expected"], _digit_rows(b)))
-        body.append(f"<p>{_h(_benford_tail(b))}</p>")
+        body.append(f"<p>{h(_benford_head(b))}</p>")
+        body.append(html_table(["Digit", "Count", "Share", "Expected"], _digit_rows(b)))
+        body.append(f"<p>{h(_benford_tail(b))}</p>")
     body.append("<p>The items are listed in items_to_check.csv.</p>")
     style = (
         "body{font-family:sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem}"
@@ -201,17 +226,17 @@ def page(result: AnalysisResult) -> str:
     )
 
 
-def _check_existing(out: Path, force: bool) -> None:
+def check_existing(out: Path, force: bool, names: tuple[str, ...] = FILES) -> None:
     if out.exists() and not out.is_dir():
         raise ValueError(f"{ascii(str(out))} is a file, not a folder")
-    names = sorted(p.name for p in out.iterdir()) if out.is_dir() else []
-    if not names:
+    found = sorted(p.name for p in out.iterdir()) if out.is_dir() else []
+    if not found:
         return
     if not force:
         raise ValueError(
             f"{ascii(str(out))} is not empty, use --force to replace the output files"
         )
-    other = [n for n in names if n not in FILES]
+    other = [n for n in found if n not in names]
     if other:
         raise ValueError(
             f"{ascii(str(out))} holds files that are not ledgercheck output, "
@@ -226,15 +251,15 @@ def check_out_folder(out: Path, data: Path, force: bool = False) -> None:
         raise ValueError(
             f"{ascii(str(out))}: output folder must not be inside the data"
         )
-    _check_existing(out, force)
+    check_existing(out, force)
 
 
-def _prepare(out: Path, force: bool) -> None:
-    _check_existing(out, force)
+def prepare(out: Path, force: bool, names: tuple[str, ...] = FILES) -> None:
+    check_existing(out, force, names)
     out.mkdir(parents=True, exist_ok=True)
 
 
-def _write(out: Path, name: str, text: str) -> None:
+def write(out: Path, name: str, text: str) -> None:
     temp = out / f".{name}.tmp"
     try:
         with temp.open("w", encoding="utf-8", newline="") as f:
@@ -246,8 +271,8 @@ def _write(out: Path, name: str, text: str) -> None:
 
 
 def write_report(out: Path, result: AnalysisResult, force: bool = False) -> None:
-    _prepare(out, force)
-    _write(out, "items_to_check.csv", _csv_text(result))
-    _write(out, "analysis.md", markdown(result))
-    _write(out, "analysis.html", page(result))
-    _write(out, "README.txt", README)
+    prepare(out, force)
+    write(out, "items_to_check.csv", _csv_text(result))
+    write(out, "analysis.md", markdown(result))
+    write(out, "analysis.html", page(result))
+    write(out, "README.txt", README)
