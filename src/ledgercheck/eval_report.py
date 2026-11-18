@@ -108,17 +108,23 @@ def _settings_dict(s: Settings) -> dict[str, float]:
     }
 
 
-def _unscored(report: EvalReport) -> dict[str, int]:
+UNSCORED_SHOWN = 10
+
+
+def _unscored(report: EvalReport) -> tuple[dict[str, int], int]:
     total: dict[str, int] = {}
     for s in report.seed_scores:
         for kind, count in s.unscored.items():
             total[kind] = total.get(kind, 0) + count
-    return dict(sorted(total.items()))
+    first = sorted(total.items())[:UNSCORED_SHOWN]
+    cleaned = {plain(k)[:80]: v for k, v in first}
+    return cleaned, max(len(total) - UNSCORED_SHOWN, 0)
 
 
 def metrics_dict(report: EvalReport, command: str) -> dict[str, Any]:
     p = report.params
     g = report.grid
+    unscored = _unscored(report)
     return {
         "command": command,
         "synthetic": True,
@@ -149,7 +155,8 @@ def metrics_dict(report: EvalReport, command: str) -> dict[str, Any]:
         "tuned_rules": {
             k: _rule_dict(r, report) for k, r in report.tuned_rules.items()
         },
-        "unscored_label_types": _unscored(report),
+        "unscored_label_types": unscored[0],
+        "unscored_more": unscored[1],
         "any_rule": {
             kind: {
                 "labeled": a.labeled,
@@ -231,6 +238,14 @@ def _cost_lines(doc: dict[str, Any]) -> list[str]:
     ]
 
 
+UNSCORED_TITLE = "Label types no rule scores"
+MD_SPECIAL = "\\|`*_[]<>"
+
+
+def _md_cell(text: str) -> str:
+    return "".join("\\" + c if c in MD_SPECIAL else c for c in text)
+
+
 def _unscored_section(
     doc: dict[str, Any],
 ) -> list[tuple[str, list[str], list[list[str]]]]:
@@ -240,7 +255,11 @@ def _unscored_section(
     rows = [["Label type", "Labeled units"]]
     rows += [[plain(k)[:80], str(v)] for k, v in found.items()]
     note = "No rule scores these label types. They are not an error."
-    return [("Label types no rule scores", [note], rows)]
+    lines = [note]
+    more = doc.get("unscored_more", 0)
+    if more:
+        lines.append(f"and {more} more types")
+    return [(UNSCORED_TITLE, lines, rows)]
 
 
 def sections(doc: dict[str, Any]) -> list[tuple[str, list[str], list[list[str]]]]:
@@ -286,7 +305,10 @@ def markdown(doc: dict[str, Any]) -> str:
         if table:
             out += ["| " + " | ".join(table[0]) + " |"]
             out += ["| " + " | ".join("---" for _ in table[0]) + " |"]
-            out += ["| " + " | ".join(row) + " |" for row in table[1:]] + [""]
+            rows = table[1:]
+            if title == UNSCORED_TITLE:
+                rows = [[_md_cell(row[0]), row[1]] for row in rows]
+            out += ["| " + " | ".join(row) + " |" for row in rows] + [""]
     return "\n".join(out)
 
 
@@ -323,9 +345,6 @@ def write_eval_report(out: Path, doc: dict[str, Any], force: bool = False) -> No
     write(out, "evaluation.html", page(doc))
     write(out, "metrics.json", metrics_text(doc))
     write(out, "README.txt", README + "\n" + doc["method"] + "\n")
-
-
-UNSCORED_SHOWN = 10
 
 
 def _text_table(rows: list[list[str]]) -> list[str]:

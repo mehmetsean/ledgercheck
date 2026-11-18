@@ -131,8 +131,7 @@ def measured_lines() -> list[str]:
     lines.append(
         f"typo_duplicate_payment: {typo['caught']} of {typo['labeled']} labeled "
         f"payments are flagged by a scored rule at the run defaults, recall "
-        f"{typo['recall']:.4f} (95 percent interval {low:.4f} to {high:.4f}). "
-        "Only duplicate_exact and duplicate_fuzzy flag payments."
+        f"{typo['recall']:.4f} (95 percent interval {low:.4f} to {high:.4f})."
     )
     return lines
 
