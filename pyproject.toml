@@ -49,3 +49,7 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.mypy]
 strict = true
 files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["synthbiz", "synthbiz.*"]
+ignore_missing_imports = true
