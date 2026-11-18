@@ -37,6 +37,7 @@ addopts = "--cov=ledgercheck --cov-report=term-missing --cov-fail-under=90"
 
 [tool.ruff]
 line-length = 88
+extend-exclude = ["docs", "*.md"]
 src = ["src", "tests"]
 
 [tool.ruff.lint]
