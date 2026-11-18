@@ -28,6 +28,7 @@ jobs:
       - run: ruff format --check .
       - run: mypy --strict src
       - run: pytest
+      - run: python scripts/make_measured.py --check
 
   ci:
     name: ci
