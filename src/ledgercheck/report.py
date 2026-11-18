@@ -56,7 +56,7 @@ def safe_cell(text: str) -> str:
     return "'" + clean if risky else clean
 
 
-def _csv_text(result: AnalysisResult) -> str:
+def csv_text(result: AnalysisResult) -> str:
     rows = [
         [f.rule, f.table, f.unit_id, " ".join(f.row_ids), f.reason]
         for f in result.flags
@@ -114,7 +114,7 @@ def _digit_rows(b: BenfordResult) -> list[tuple[str, str, str, str]]:
     return rows
 
 
-def _benford_head(b: BenfordResult) -> str:
+def benford_head(b: BenfordResult) -> str:
     return f"{b.field}: status {b.status} ({b.reason})"
 
 
@@ -170,7 +170,7 @@ def markdown(result: AnalysisResult) -> str:
     if not result.benford:
         out += ["SKIP: no amount field in the input.", ""]
     for b in result.benford:
-        out += [_benford_head(b), ""]
+        out += [benford_head(b), ""]
         out += ["| Digit | Count | Share | Expected |", "| --- | --- | --- | --- |"]
         out += [f"| {a} | {c} | {s} | {e} |" for a, c, s, e in _digit_rows(b)]
         out += ["", _benford_tail(b), ""]
@@ -207,7 +207,7 @@ def page(result: AnalysisResult) -> str:
     if not result.benford:
         body.append("<p>SKIP: no amount field in the input.</p>")
     for b in result.benford:
-        body.append(f"<p>{h(_benford_head(b))}</p>")
+        body.append(f"<p>{h(benford_head(b))}</p>")
         body.append(html_table(["Digit", "Count", "Share", "Expected"], _digit_rows(b)))
         body.append(f"<p>{h(_benford_tail(b))}</p>")
     body.append("<p>The items are listed in items_to_check.csv.</p>")
@@ -272,7 +272,7 @@ def write(out: Path, name: str, text: str) -> None:
 
 def write_report(out: Path, result: AnalysisResult, force: bool = False) -> None:
     prepare(out, force)
-    write(out, "items_to_check.csv", _csv_text(result))
+    write(out, "items_to_check.csv", csv_text(result))
     write(out, "analysis.md", markdown(result))
     write(out, "analysis.html", page(result))
     write(out, "README.txt", README)

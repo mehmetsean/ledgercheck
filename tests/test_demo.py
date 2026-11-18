@@ -1,6 +1,7 @@
 import csv
 import json
 import shutil
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -8,8 +9,8 @@ import pytest
 
 from ledgercheck import demo
 from ledgercheck.cli import main
-from ledgercheck.evaluate import DEFAULT_COSTS, evaluate_folder
-from ledgercheck.models import Settings
+from ledgercheck.evaluate import DEFAULT_COSTS, Label, evaluate_folder
+from ledgercheck.models import Flag, Ledger, Payment, Settings
 
 ROOT = Path(__file__).parent.parent
 EXAMPLE_DATA = ROOT / "examples" / "synthbiz-seed42-12m"
@@ -70,8 +71,6 @@ def test_marks_add_up_to_the_scores(synthetic: dict[str, Any]) -> None:
         assert marks.count("false_alarm") == r["fp"]
         assert marks.count("other_label") == r["other_label"]
         assert marks.count("miss") == r["misses"]
-        assert marks.count("hit") >= 1 or r["tp"] == 0
-        assert marks.count("hit") + marks.count("miss") >= r["labeled"]
 
 
 def test_rates_are_between_zero_and_one(synthetic: dict[str, Any]) -> None:
@@ -189,8 +188,14 @@ def test_files_mode_errors_say_what_to_do(tmp_path: Path) -> None:
         demo.run_files(str(folder), {"nope": {"file": "a.csv", "columns": {}}})
     with pytest.raises(ValueError, match="amounts"):
         demo.run_files(str(folder), identity(folder), amounts="euros")
-    with pytest.raises(ValueError, match="file"):
+    with pytest.raises(ValueError, match="not used"):
         demo.run_files(str(folder), {"vendors": {"columns": {}}})
+    with pytest.raises(ValueError, match="file not found"):
+        demo.run_files(str(folder), {"vendors": {"file": "gone.csv", "columns": {}}})
+    with pytest.raises(ValueError, match="no table files"):
+        demo.run_files(str(folder), {"vendors": {"file": "a.csv", "columns": {}}})
+    with pytest.raises(ValueError, match="date_format"):
+        demo.run_files(str(folder), identity(folder), date_format="nope")
 
 
 def test_read_header(tmp_path: Path) -> None:
@@ -225,3 +230,72 @@ def test_table_fields_match_the_reader() -> None:
     assert list(fields) == list(SPECS)
     assert fields["vendors"] == ["vendor_id", "vendor_name"]
     assert "amount_cents" in fields["ap_payments"]
+
+
+def test_missed_units_equal_what_score_reports(
+    synthetic: dict[str, Any], cli_folder: Path
+) -> None:
+    scores, _ = evaluate_folder(cli_folder / "d", Settings(), DEFAULT_COSTS)
+    for rule, s in scores.rules.items():
+        misses = [
+            i["reason"]
+            for i in synthetic["items"]
+            if i["rule"] == rule and i["mark"] == "miss"
+        ]
+        assert len(misses) == s.misses
+        assert tuple(misses[:5]) == s.missed_details
+
+
+def hand_built() -> tuple[Ledger, list[Label], list[Flag]]:
+    day = date(2025, 3, 3)
+    pays = tuple(Payment(f"P{i}", "V1", f"I{i}", day, 100 * i) for i in (1, 2, 3, 4))
+    ledger = Ledger(payments=pays)
+    labels = [
+        Label("ap_payments", "P1", "exact_duplicate_payment", "first"),
+        Label("ap_payments", "P2", "near_duplicate_payment", "second"),
+        Label("ap_payments", "P4", "near_duplicate_payment", "fourth"),
+    ]
+    flags = [
+        Flag("duplicate_exact", "ap_payments", "P1", ("P1",), "r"),
+        Flag("duplicate_exact", "ap_payments", "P2", ("P2",), "r"),
+        Flag("duplicate_exact", "ap_payments", "P3", ("P3",), "r"),
+        Flag("entry_number_gap", "journal_lines", "JE-9", ("L9",), "r"),
+        Flag("benford_first_digit", "ap_payments", "x", (), "r"),
+    ]
+    return ledger, labels, flags
+
+
+def test_marks_on_a_hand_built_ledger() -> None:
+    ledger, labels, flags = hand_built()
+    items = demo._marks(flags, labels, ledger, set())
+    marks = [(i["rule"], i["unit_id"], i["mark"]) for i in items]
+    assert marks == [
+        ("duplicate_exact", "P1", "hit"),
+        ("duplicate_exact", "P2", "other_label"),
+        ("duplicate_exact", "P3", "false_alarm"),
+        ("entry_number_gap", "JE-9", "not_scored"),
+        ("benford_first_digit", "x", "not_scored"),
+        ("duplicate_fuzzy", "P2", "miss"),
+        ("duplicate_fuzzy", "P4", "miss"),
+    ]
+    assert [i["reason"] for i in items[-2:]] == ["second", "fourth"]
+
+
+def test_a_skipped_rule_has_no_miss_rows() -> None:
+    ledger, labels, flags = hand_built()
+    items = demo._marks(flags, labels, ledger, {"duplicate_fuzzy"})
+    assert [i for i in items if i["mark"] == "miss"] == []
+
+
+def test_unscored_label_types_are_returned(monkeypatch: pytest.MonkeyPatch) -> None:
+    real = demo.read_labels
+
+    def with_extra(folder: Path) -> list[Label]:
+        labels = real(folder)
+        pay = next(x for x in labels if x.table == "ap_payments")
+        return labels + [Label("ap_payments", pay.row_id, "mystery_type", "x")]
+
+    monkeypatch.setattr(demo, "read_labels", with_extra)
+    assert demo.run_synthetic(SEED, MONTHS, SIZE, RATE)["unscored"] == {
+        "mystery_type": 1
+    }

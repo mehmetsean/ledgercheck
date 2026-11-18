@@ -16,8 +16,7 @@ from .evaluate import (
     RULE_TYPES,
     Label,
     Scores,
-    _flag_units,
-    _labeled_units,
+    classify,
     f1,
     precision,
     read_labels,
@@ -26,7 +25,7 @@ from .evaluate import (
 )
 from .io import SPECS, plain, read_folder
 from .models import Flag, Ledger, Settings
-from .report import DISCLAIMER, NOTICE, _benford_head, _csv_text
+from .report import DISCLAIMER, NOTICE, benford_head, csv_text
 
 MAX_MONTHS = 24
 MAX_RATE = 0.2
@@ -53,7 +52,7 @@ def _benford_dict(b: BenfordResult) -> Result:
         "field": b.field,
         "status": b.status,
         "reason": b.reason,
-        "line": _benford_head(b),
+        "line": benford_head(b),
         "n": b.n,
         "counts": list(b.counts),
         "expected": list(b.expected_shares),
@@ -83,7 +82,7 @@ def _common(result: AnalysisResult, mode: str) -> Result:
         "skips": result.skips,
         "tables": result.table_rows,
         "benford": [_benford_dict(b) for b in result.benford],
-        "items_csv": _csv_text(result),
+        "items_csv": csv_text(result),
         "notice": NOTICE,
         "disclaimer": DISCLAIMER,
         "rules": [],
@@ -94,30 +93,14 @@ def _common(result: AnalysisResult, mode: str) -> Result:
 def _marks(
     flags: list[Flag], labels: list[Label], ledger: Ledger, skipped: set[str]
 ) -> list[Result]:
-    """Each flag as hit, false_alarm or other_label, then each miss."""
-    by_type, details = _labeled_units(labels, ledger)
-    covered: dict[str, set[tuple[str, str]]] = {}
-    items = []
-    for flag in flags:
-        kinds = RULE_TYPES.get(flag.rule)
-        if kinds is None:
-            items.append(_item(flag, "not_scored"))
-            continue
-        mine = set().union(*(by_type.get(k, set()) for k in kinds))
-        units = _flag_units(flag)
-        if units & mine:
-            covered.setdefault(flag.rule, set()).update(units & mine)
-            items.append(_item(flag, "hit"))
-        elif units & set().union(*(u for t, u in by_type.items() if t not in kinds)):
-            items.append(_item(flag, "other_label"))
-        else:
-            items.append(_item(flag, "false_alarm"))
-    for rule, kinds in RULE_TYPES.items():
+    """Each flag with its mark, then each miss of a rule that ran."""
+    cls = classify(flags, labels, ledger)
+    items = [_item(flag, mark) for flag, mark in cls.marks]
+    for rule in RULE_TYPES:
         if rule in skipped:
             continue
-        mine = set().union(*(by_type.get(k, set()) for k in kinds))
-        for unit in sorted(mine - covered.get(rule, set())):
-            miss = Flag(rule, unit[0], unit[1], (), details[unit][0])
+        for unit in sorted(cls.labeled[rule] - cls.covered[rule]):
+            miss = Flag(rule, unit[0], unit[1], (), cls.details[unit][0])
             items.append(_item(miss, "miss"))
     return items
 
@@ -210,7 +193,9 @@ def _column_map_json(
                 f"table {plain(str(table))[:40]}: use one of {list(SPECS)}"
             )
         if not spec.get("file"):
-            raise ValueError(f"Choose a file for {table}, or remove the table.")
+            raise ValueError(
+                f"Choose a file for {table}, or set its file to (not used)."
+            )
         files[table] = spec["file"]
         chosen = {k: v for k, v in spec.get("columns", {}).items() if v}
         if chosen:
@@ -238,6 +223,11 @@ def run_files(
         map_path = Path(tmp) / "column_map.json"
         map_path.write_text(text, "utf-8")
         cmap = load_column_map(map_path)
+    for spec in tables.values():
+        if not (Path(folder) / spec["file"]).is_file():
+            raise ValueError(
+                f"{plain(str(spec['file']))}: file not found, choose it again"
+            )
     ledger = read_folder(Path(folder), cmap)
     result = analyze(ledger, Settings())
     out = _common(result, "files")

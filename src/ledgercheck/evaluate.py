@@ -336,7 +336,7 @@ def _label_unit(label: Label, lookup: dict[str, dict[str, str]]) -> Unit | None:
     return (label.table, ids[label.row_id])
 
 
-def _labeled_units(
+def labeled_units(
     labels: Sequence[Label], ledger: Ledger
 ) -> tuple[dict[str, set[Unit]], dict[Unit, list[str]]]:
     lookup = _lookup(ledger)
@@ -351,7 +351,7 @@ def _labeled_units(
     return by_type, details
 
 
-def _flag_units(flag: Flag) -> set[Unit]:
+def flag_units(flag: Flag) -> set[Unit]:
     if flag.table == INVOICES:
         return {(INVOICES, x) for x in flag.row_ids}
     return {(flag.table, flag.unit_id)}
@@ -364,6 +364,58 @@ def _unit_total(ledger: Ledger, table: str) -> int:
     return len(rows or ())
 
 
+HIT = "hit"
+FALSE_ALARM = "false_alarm"
+OTHER_LABEL = "other_label"
+NOT_SCORED = "not_scored"
+
+
+@dataclass(frozen=True)
+class Classified:
+    """Each flag marked, and per scored rule the labeled and covered units."""
+
+    marks: list[tuple[Flag, str]]
+    labeled: dict[str, set[Unit]]
+    covered: dict[str, set[Unit]]
+    by_type: dict[str, set[Unit]]
+    details: dict[Unit, list[str]]
+
+
+def classify(
+    flags: Sequence[Flag], labels: Sequence[Label], ledger: Ledger
+) -> Classified:
+    """Mark each flag hit, false_alarm, other_label or not_scored.
+
+    A hit lands on a unit labeled with a type the rule scores. other_label lands
+    on a unit labeled with another type. score() and the demo both use this.
+    """
+    by_type, details = labeled_units(labels, ledger)
+    labeled = {
+        rule: set().union(*(by_type.get(k, set()) for k in kinds))
+        for rule, kinds in RULE_TYPES.items()
+    }
+    others = {
+        rule: set().union(*(u for t, u in by_type.items() if t not in kinds))
+        for rule, kinds in RULE_TYPES.items()
+    }
+    covered: dict[str, set[Unit]] = {rule: set() for rule in RULE_TYPES}
+    marks: list[tuple[Flag, str]] = []
+    for flag in flags:
+        kinds = RULE_TYPES.get(flag.rule)
+        if kinds is None:
+            marks.append((flag, NOT_SCORED))
+            continue
+        units = flag_units(flag)
+        if units & labeled[flag.rule]:
+            covered[flag.rule] |= units & labeled[flag.rule]
+            marks.append((flag, HIT))
+        elif units & others[flag.rule]:
+            marks.append((flag, OTHER_LABEL))
+        else:
+            marks.append((flag, FALSE_ALARM))
+    return Classified(marks, labeled, covered, by_type, details)
+
+
 def score(
     flags: Sequence[Flag],
     labels: Sequence[Label],
@@ -373,7 +425,8 @@ def score(
     """Score flags per rule. any_rule counts a labeled unit as caught when a flag
     from any scored rule lands on it. entry_number_gap and benford are not scored.
     """
-    by_type, details = _labeled_units(labels, ledger)
+    cls = classify(flags, labels, ledger)
+    by_type, details = cls.by_type, cls.details
     skipped = skip_reasons(ledger)
     totals: dict[str, int] = {}
     rules: dict[str, RuleScore] = {}
@@ -384,20 +437,13 @@ def score(
         kinds = RULE_TYPES[rule]
         kind = kinds[0]
         table = TYPE_TABLE.get(kind, JOURNAL)
-        mine = set().union(*(by_type.get(k, set()) for k in kinds))
-        others = set().union(*(u for t, u in by_type.items() if t not in kinds))
+        mine = cls.labeled[rule]
+        covered = cls.covered[rule]
         mine_flags = [f for f in flags if f.rule == rule]
-        covered: set[Unit] = set()
-        fp = other = 0
-        for flag in mine_flags:
-            units = _flag_units(flag)
-            if units & mine:
-                covered |= units & mine
-            elif units & others:
-                other += 1
-            else:
-                fp += 1
-        caught |= set().union(*(_flag_units(f) for f in mine_flags))
+        marks = [m for f, m in cls.marks if f.rule == rule]
+        fp = marks.count(FALSE_ALARM)
+        other = marks.count(OTHER_LABEL)
+        caught |= set().union(*(flag_units(f) for f in mine_flags))
         totals.setdefault(table, _unit_total(ledger, table))
         missed = sorted(mine - covered)
         miss_total = sum(
