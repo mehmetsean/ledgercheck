@@ -37,12 +37,11 @@ def _observed(d: date) -> date:
 
 
 def _rules(year: int) -> list[tuple[date, str]]:
-    return [
+    rules = [
         (_observed(date(year, 1, 1)), "New Year's Day"),
         (_nth_weekday(year, 1, 0, 3), "Martin Luther King Jr. Day"),
         (_nth_weekday(year, 2, 0, 3), "Washington's Birthday"),
         (_last_weekday(year, 5, 0), "Memorial Day"),
-        (_observed(date(year, 6, 19)), "Juneteenth"),
         (_observed(date(year, 7, 4)), "Independence Day"),
         (_nth_weekday(year, 9, 0, 1), "Labor Day"),
         (_nth_weekday(year, 10, 0, 2), "Columbus Day"),
@@ -50,6 +49,9 @@ def _rules(year: int) -> list[tuple[date, str]]:
         (_nth_weekday(year, 11, 3, 4), "Thanksgiving Day"),
         (_observed(date(year, 12, 25)), "Christmas Day"),
     ]
+    if year >= 2021:
+        rules.append((_observed(date(year, 6, 19)), "Juneteenth"))
+    return rules
 
 
 def holidays(year: int) -> dict[date, str]:
