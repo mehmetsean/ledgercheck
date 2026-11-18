@@ -302,12 +302,13 @@ it was not repeated.
 
 Precision and recall are counted the way `ledgercheck evaluate` counts them,
 per planted duplicate type. Treat them as a check that the code works on
-synthetic data. synthbiz plants no typo near-duplicates yet (its near duplicates
-keep the amount and the invoice number and differ in vendor suffix or
-punctuation), so fuzzy recall on this data says nothing about typos. See the
-README. Times are from one machine and will differ on yours. The cell steps
-columns in the tables above are counted by the same meter the shipped search
-uses, 16 per compare plus the edit distance cells.
+synthetic data. The near columns score duplicate_fuzzy against both
+near_duplicate_payment and typo_duplicate_payment. The false positives are
+mostly legitimate background rows, such as weekly freight invoices with
+sequential numbers, which synthbiz does not label. See the README. Times are
+from one machine and will differ on yours. The cell steps columns in the tables
+above are counted by the same meter the shipped search uses, 16 per compare
+plus the edit distance cells.
 """
 
 
