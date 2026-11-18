@@ -198,21 +198,9 @@ input[type="file"] { padding: var(--space-2) var(--space-3); height: auto; }
 .chart .axis { stroke: var(--color-border); stroke-width: 1; }
 .chart text { fill: var(--color-text); font-family: var(--font-sans); font-size: 12px; }
 
-#checks { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
-#checks li {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: var(--space-2) var(--space-3);
-  overflow-wrap: anywhere;
-}
-.mark { font-weight: 700; font-family: var(--font-mono); margin-right: var(--space-2); }
-.pass { color: var(--color-pass); }
-.fail { color: var(--color-fail); text-decoration: underline; }
 .status-line { font-weight: 600; overflow-wrap: anywhere; margin: var(--space-5) 0 var(--space-2); }
 .mark-hit { font-weight: 700; color: var(--color-pass); }
 .mark-false_alarm, .mark-miss { font-weight: 700; color: var(--color-fail); }
-.msg { font-size: var(--text-sm); color: var(--color-muted); }
 
 .scroll {
   overflow-x: auto;
@@ -226,7 +214,6 @@ input[type="file"] { padding: var(--space-2) var(--space-3); height: auto; }
   scrollbar-width: auto;
   scrollbar-color: var(--color-muted) var(--color-accent-soft);
 }
-.table-box { min-width: 0; max-width: 100%; }
 .hint { font-size: var(--text-sm); color: var(--color-muted); margin: 0 0 var(--space-1); }
 .hint[hidden] { display: none; }
 .scroll:focus-visible { box-shadow: var(--focus-ring); }
@@ -239,11 +226,6 @@ th, td {
   font-variant-numeric: tabular-nums;
 }
 td.num, th.num { text-align: right; }
-td.wrap, td.long { white-space: normal; overflow-wrap: anywhere; min-width: 12rem; max-width: 20rem; }
-td.long { min-width: 16rem; }
-details summary { cursor: pointer; }
-details[open] summary { font-weight: 600; margin-bottom: var(--space-1); }
-details p { margin: 0; }
 th { background: var(--color-accent-soft); }
 td.reason { white-space: normal; min-width: 18rem; max-width: 32rem; }
 caption { text-align: left; font-weight: 600; padding: var(--space-2) var(--space-3); }

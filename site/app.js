@@ -2,7 +2,8 @@
 
 const WORK = "/work";
 const INPUT = WORK + "/in";
-const MAX_TOTAL_BYTES = 150000000;
+const DEFAULT_MAX_BYTES = 150000000;
+const MAX_TOTAL_BYTES = Number(new URLSearchParams(location.search).get("maxbytes")) || DEFAULT_MAX_BYTES;
 const MAX_ROWS_SHOWN = 200;
 const WHEEL_NAME = /^[A-Za-z0-9_.+-]+\.whl$/;
 const MARKS = {
@@ -49,7 +50,19 @@ function svg(tag, attrs, text) {
 
 function pyError(e) {
   const lines = String(e && e.message ? e.message : e).trim().split("\n");
-  return lines[lines.length - 1].replace(/^[A-Za-z]*Error: /, "");
+  let start = lines.length - 1;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (/^[A-Za-z_.]*(Error|Exception): /.test(lines[i])) {
+      start = i;
+      break;
+    }
+  }
+  return lines.slice(start).join(" ").replace(/^[A-Za-z_.]*(Error|Exception): /, "");
+}
+
+function withPeriod(text) {
+  const t = String(text).trim();
+  return /[.!?]$/.test(t) ? t : t + ".";
 }
 
 function number(value, format) {
@@ -179,7 +192,7 @@ function renderBenford(data) {
     box.appendChild(el("p", "synthbiz amounts are uniform draws, so a Benford misfit on them means nothing.", "note"));
   }
   if (data.benford.length === 0) {
-    box.appendChild(el("p", "Skipped: there is no amount column in the input."));
+    box.appendChild(el("p", "Skipped: no amount column was found. Choose the amount column in the table mapping, then run again."));
     return;
   }
   for (const b of data.benford) {
@@ -264,7 +277,9 @@ function toData(proxy) {
 }
 
 function busy(on) {
-  for (const id of ["run-synthetic", "run-files"]) $(id).disabled = on || !demo;
+  $("run-synthetic").disabled = on || !demo;
+  $("run-files").disabled = on || !demo || chosen.length === 0;
+  $("file-input").disabled = on;
 }
 
 async function pause() {
@@ -282,7 +297,7 @@ async function runSynthetic(event) {
     render(data);
     setStatus("Done. " + whole.format(data.items.filter((i) => i.mark !== "miss").length) + " items to check, " + data.info.labels + " planted labels.");
   } catch (e) {
-    setStatus("Error: " + pyError(e) + " Change the input and run again.");
+    setStatus("Error: " + withPeriod(pyError(e)) + " Change the input and run again.");
   }
   busy(false);
 }
@@ -351,11 +366,25 @@ function buildMapping() {
 }
 
 async function onFiles() {
-  chosen = Array.from($("file-input").files);
+  const input = $("file-input");
+  chosen = Array.from(input.files);
   headers = {};
   $("mapping").replaceChildren();
   $("run-files").disabled = true;
   if (chosen.length === 0) return;
+  const names = chosen.map((f) => f.name);
+  const bad = names.find((n) => n.includes("/") || n.includes("\\"));
+  if (bad) {
+    chosen = [];
+    setStatus("Error: the file name " + JSON.stringify(bad) + " has a slash in it. Rename the file and choose it again.");
+    return;
+  }
+  const twice = names.find((n, i) => names.indexOf(n) !== i);
+  if (twice) {
+    chosen = [];
+    setStatus("Error: two chosen files are both named " + JSON.stringify(twice) + ". Rename one and choose the files again.");
+    return;
+  }
   const total = chosen.reduce((sum, f) => sum + f.size, 0);
   if (total > MAX_TOTAL_BYTES) {
     setStatus("Error: these files are " + size1.format(total / 1e6) + " MB, more than the " + size1.format(MAX_TOTAL_BYTES / 1e6) + " MB this page reads. Use the command line for large files, or choose smaller files.");
@@ -363,6 +392,7 @@ async function onFiles() {
     return;
   }
   setStatus("Reading the column names.");
+  input.disabled = true;
   try {
     await writeFiles();
     for (const file of chosen) {
@@ -375,8 +405,9 @@ async function onFiles() {
   } catch (e) {
     wipe();
     chosen = [];
-    setStatus("Error: " + pyError(e) + " Fix the file and choose it again.");
+    setStatus("Error: " + withPeriod(pyError(e)) + " Fix the file and choose it again.");
   }
+  input.disabled = false;
 }
 
 function collectTables() {
@@ -413,15 +444,31 @@ async function runFiles(event) {
     render(data);
     setStatus("Done. " + whole.format(data.items.length) + " items to check.");
   } catch (e) {
-    const text = e && e.name === "Error" && !e.type ? e.message : pyError(e);
-    setStatus("Error: " + text + (text.endsWith(".") ? "" : ". Fix the input and run again."));
+    const own = e && e.name === "Error" && !e.type;
+    const text = own ? e.message : pyError(e);
+    setStatus("Error: " + withPeriod(text) + (own ? "" : " Fix the input and run again."));
   }
   if (proxy) proxy.destroy();
   wipe();
   busy(false);
 }
 
+function clearResults() {
+  current = null;
+  if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+  downloadUrl = null;
+  const link = $("download");
+  link.removeAttribute("href");
+  link.hidden = true;
+  for (const id of ["summary", "rules", "benford", "items"]) $(id).replaceChildren();
+  $("result-line").textContent = "";
+  $("items-note").textContent = "";
+  $("rules-box").hidden = true;
+  $("results").hidden = true;
+}
+
 function setMode() {
+  clearResults();
   const files = $("mode-files").checked;
   $("synthetic-form").hidden = files;
   $("files-form").hidden = !files;
@@ -450,16 +497,29 @@ async function start() {
     pyodide.FS.mkdirTree(WORK);
     fields = toData(demo.table_fields());
     $("run-synthetic").disabled = false;
-    setStatus("Ready. Nothing leaves this page.");
+    setStatus("Ready. Your files stay in this page.");
   } catch (e) {
-    setStatus("Could not load the demo: " + String(e && e.message ? e.message : e) + " Reload the page to try again.");
+    setStatus("Could not load the demo: " + withPeriod(e && e.message ? e.message : e) + " Reload the page to try again.");
   }
 }
 
 $("synthetic-form").addEventListener("submit", runSynthetic);
 $("files-form").addEventListener("submit", runFiles);
 $("file-input").addEventListener("change", onFiles);
+$("clear-results").addEventListener("click", () => {
+  clearResults();
+  setStatus("Results cleared.");
+});
 $("filter-rule").addEventListener("change", renderItems);
 $("filter-mark").addEventListener("change", renderItems);
 for (const radio of document.querySelectorAll("input[name=mode]")) radio.addEventListener("change", setMode);
 start();
+
+// Read-only hook for the browser test: the files held in the page file system.
+window.heldInputFiles = () => {
+  try {
+    return pyodide.FS.readdir(INPUT).filter((n) => n !== "." && n !== "..");
+  } catch (e) {
+    return [];
+  }
+};

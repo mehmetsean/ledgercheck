@@ -29,7 +29,7 @@
 </fieldset>
 
 <form id="synthetic-form">
-<p class="note wide">The data comes from synthbiz and is made up. Its amounts are uniform draws, so a Benford misfit on them means nothing. Precision and recall are scored against the labels synthbiz plants, and they do not predict results on real books.</p>
+<p class="note wide">The data is synthetic data from synthbiz, not real company data. Its amounts are uniform draws, so a Benford misfit on them means nothing. Precision and recall are scored against the labels synthbiz plants, and they do not predict results on real books.</p>
 <div class="field">
 <label for="seed">Seed</label>
 <input id="seed" name="seed" type="number" inputmode="numeric" autocomplete="off" min="0" step="1" value="42" required>
@@ -116,6 +116,7 @@
 </div>
 <p id="items-note" class="hint" role="status"></p>
 <div id="items"></div>
+<p><button type="button" id="clear-results" class="secondary">Clear results</button></p>
 <p><a id="download" class="button-link" hidden download="items_to_check.csv">Download items_to_check.csv</a></p>
 </section>
 </main>
