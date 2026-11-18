@@ -9,7 +9,7 @@ from hypothesis import strategies as st
 
 from helpers import invoice, ledger, line, payment
 from ledgercheck import evaluate as ev
-from ledgercheck.models import Flag
+from ledgercheck.models import Flag, Vendor
 
 COSTS = ev.DEFAULT_COSTS
 SAT = date(2025, 3, 8)
@@ -369,3 +369,77 @@ def test_check_work_limits():
         ev.check_work([1], range(201), 1)
     with pytest.raises(ValueError, match="seeds times months"):
         ev.check_work(range(50), range(200), 25)
+
+
+def pay_ledger():
+    pays = [
+        payment("P1", "V1", "I1", SAT, 500),
+        payment("P2", "V1", "I2", SAT, 500),
+        payment("P3", "V2", "I3", SAT, 700),
+    ]
+    vendors = [Vendor("V1", "A Co"), Vendor("V2", "B Co")]
+    return ledger(invoices=[], payments=pays, vendors=vendors)
+
+
+def pflag(rule: str, pay: str) -> Flag:
+    return Flag(rule, "ap_payments", pay, (pay,), "r")
+
+
+def test_every_rule_maps_to_a_tuple_of_types():
+    assert ev.RULE_TYPES["duplicate_fuzzy"] == (
+        "near_duplicate_payment",
+        "typo_duplicate_payment",
+    )
+    assert ev.RULE_TYPES["duplicate_exact"] == ("exact_duplicate_payment",)
+    for kinds in ev.RULE_TYPES.values():
+        for kind in kinds:
+            assert kind in COSTS.miss_cost
+
+
+def test_typo_duplicate_is_ap_payments_and_costs_like_near():
+    assert ev.TYPE_TABLE["typo_duplicate_payment"] == "ap_payments"
+    typo = COSTS.miss_cost["typo_duplicate_payment"]
+    assert typo == COSTS.miss_cost["near_duplicate_payment"] == 800.0
+
+
+def test_fuzzy_scores_typo_duplicates():
+    lab = [
+        label("ap_payments", "P2", "typo_duplicate_payment"),
+        label("ap_payments", "P3", "near_duplicate_payment"),
+    ]
+    flags = [pflag("duplicate_fuzzy", "P2")]
+    s = ev.score(flags, lab, pay_ledger(), COSTS)
+    r = s.rules["duplicate_fuzzy"]
+    assert (r.labeled, r.tp, r.fp, r.other_label, r.misses) == (2, 1, 0, 0, 1)
+    assert r.cost == 800.0 + 20.0
+    assert s.any_rule["typo_duplicate_payment"] == ev.AnyRule(1, 1)
+    assert s.any_rule["near_duplicate_payment"] == ev.AnyRule(1, 0)
+
+
+def test_exact_rule_does_not_score_typo_duplicates():
+    lab = [label("ap_payments", "P2", "typo_duplicate_payment")]
+    flags = [pflag("duplicate_exact", "P2")]
+    r = ev.score(flags, lab, pay_ledger(), COSTS).rules["duplicate_exact"]
+    assert (r.labeled, r.tp, r.other_label) == (0, 0, 1)
+
+
+def test_unknown_label_type_does_not_crash_and_is_reported():
+    lab = [
+        label("journal_lines", "L1", "future_type"),
+        label("ap_payments", "P1", "other_future_type"),
+        label("ap_payments", "P2", "other_future_type"),
+    ]
+    led = ledger(
+        lines=[line("JE-1", SAT, line_id="L1")],
+        payments=[payment("P1", "V1", "I1", SAT, 5), payment("P2", "V1", "I2", SAT, 5)],
+    )
+    flags = [jflag("weekend_posting", "JE-1")]
+    s = ev.score(flags, lab, led, COSTS)
+    assert s.unscored == {"future_type": 1, "other_future_type": 2}
+    assert s.rules["weekend_posting"].other_label == 1
+    assert s.rules["weekend_posting"].fp == 0
+
+
+def test_scored_types_are_not_listed_as_unscored():
+    lab = [label("journal_lines", "L1", "weekend_posting")]
+    assert ev.score([], lab, two_line_ledger(), COSTS).unscored == {}

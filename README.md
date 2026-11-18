@@ -101,7 +101,7 @@ The first form scores one labeled folder. The second generates each seed in memo
 - A zero-width interval means every report seed scored the same. It is not high certainty.
 - round_amount and split_under_limit show false alarms on synthbiz. The clean ledger section of the numbers block shows how many items each rule flags when nothing is planted.
 - rare_poster at its default rare_share misses most planted anomalies. The tuned row uses a higher rare_share. Both recalls are in the numbers block.
-- Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The generator is `_near_duplicate` in src/synthbiz/anomalies.py of synthbiz at commit 47a763a79681805e7dcb992c7d47e5166a83aa09, the commit pinned in pyproject.toml.
+- Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The generator is `_near_duplicate` in src/synthbiz/anomalies.py of synthbiz at commit e60de623bba11135dac1794a8e883bcc9b02face, the commit pinned in pyproject.toml.
 - "Caught by any scored rule" (shown in the evaluation report) counts a labeled unit as caught when a flag from any of the nine scored rules lands on it. entry_number_gap and benford_first_digit are not scored.
 
 To see which rules flag anything on a clean ledger (synthbiz with a planted rate of 0), run these two commands, then open /tmp/clean_ledger_out/analysis.md and read the "Items to check per rule" table.

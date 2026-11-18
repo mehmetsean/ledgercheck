@@ -370,3 +370,11 @@ def test_only_evaluate_names_labels_and_manifest_files():
     for path in SRC.glob("*.py"):
         named = [t for t in strings_of(path) if t in ("labels.csv", "manifest.json")]
         assert bool(named) == (path.name == "evaluate.py"), path.name
+
+
+def test_folder_text_names_label_types_no_rule_scores():
+    lines = [line("JE-1", SAT, line_id="L1")]
+    lab = [ev.Label("journal_lines", "L1", "future_type", "d")]
+    scores = ev.score([], lab, ledger(lines=lines), ev.DEFAULT_COSTS)
+    text = folder_text(scores, 1, None, ev.DEFAULT_COSTS)
+    assert "labels of a type no rule scores: future_type 1" in text

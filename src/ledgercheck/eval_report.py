@@ -327,6 +327,8 @@ def folder_text(
     lines += [f"Check cost {costs.check_cost}. Miss costs by anomaly type:"]
     lines += [f"  {k}: {v}" for k, v in sorted(costs.miss_cost.items())]
     lines += [""] + _text_table(cost_rows)
+    for kind, count in scores.unscored.items():
+        lines.append(f"labels of a type no rule scores: {_shown(kind)} {count}")
     for rule, r in scores.rules.items():
         for text in r.missed_details:
             lines.append(f"missed by {rule}: {_shown(text)}")
