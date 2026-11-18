@@ -44,7 +44,7 @@ Run defaults, used for the rows named after a rule: fuzzy name_threshold 0.8, in
 
 95 percent intervals come from a percentile bootstrap over seeds: 2000 draws, fixed RNG seed 20261117, seeds resampled with replacement, pooled precision, recall and F1 recomputed from summed counts.
 
-synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos.
+synthbiz plants near duplicates under a new vendor id, with the same invoice number and amount. It also plants typo duplicates, with a small change to the invoice number (one deletion, duplication or adjacent swap). duplicate_fuzzy scores both. The blocked search never finds a duplicate whose amount was changed.
 
 A 1.0000 to 1.0000 interval means every report seed scored 1.0000 on synthetic data. It is not a guarantee for real books.
 

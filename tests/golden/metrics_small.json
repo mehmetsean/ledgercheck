@@ -151,7 +151,9 @@
       "false_positives": 0,
       "flags": 9,
       "labeled": 9,
-      "miss_cost": 1000.0,
+      "miss_costs": {
+        "exact_duplicate_payment": 1000.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 1.0,
@@ -179,7 +181,10 @@
       "false_positives": 19,
       "flags": 32,
       "labeled": 15,
-      "miss_cost": 800.0,
+      "miss_costs": {
+        "near_duplicate_payment": 800.0,
+        "typo_duplicate_payment": 800.0
+      },
       "misses": 2,
       "other_label": 0,
       "precision": 0.4062,
@@ -207,7 +212,9 @@
       "false_positives": 9,
       "flags": 15,
       "labeled": 6,
-      "miss_cost": 100.0,
+      "miss_costs": {
+        "holiday_posting": 100.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.4,
@@ -235,7 +242,9 @@
       "false_positives": 36,
       "flags": 42,
       "labeled": 6,
-      "miss_cost": 200.0,
+      "miss_costs": {
+        "missing_approval": 200.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.1429,
@@ -263,7 +272,9 @@
       "false_positives": 6,
       "flags": 12,
       "labeled": 6,
-      "miss_cost": 300.0,
+      "miss_costs": {
+        "out_of_period_entry": 300.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.5,
@@ -291,7 +302,9 @@
       "false_positives": 6,
       "flags": 8,
       "labeled": 6,
-      "miss_cost": 150.0,
+      "miss_costs": {
+        "unusual_user": 150.0
+      },
       "misses": 4,
       "other_label": 0,
       "precision": 0.25,
@@ -319,7 +332,9 @@
       "false_positives": 27,
       "flags": 33,
       "labeled": 6,
-      "miss_cost": 100.0,
+      "miss_costs": {
+        "round_amount_entry": 100.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.1818,
@@ -347,7 +362,9 @@
       "false_positives": 7,
       "flags": 13,
       "labeled": 6,
-      "miss_cost": 600.0,
+      "miss_costs": {
+        "split_invoice": 600.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.4615,
@@ -375,7 +392,9 @@
       "false_positives": 12,
       "flags": 18,
       "labeled": 6,
-      "miss_cost": 100.0,
+      "miss_costs": {
+        "weekend_posting": 100.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.3333,
@@ -422,7 +441,10 @@
       "false_positives": 21,
       "flags": 36,
       "labeled": 15,
-      "miss_cost": 800.0,
+      "miss_costs": {
+        "near_duplicate_payment": 800.0,
+        "typo_duplicate_payment": 800.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.4167,
@@ -450,7 +472,9 @@
       "false_positives": 6,
       "flags": 12,
       "labeled": 6,
-      "miss_cost": 150.0,
+      "miss_costs": {
+        "unusual_user": 150.0
+      },
       "misses": 0,
       "other_label": 0,
       "precision": 0.5,
@@ -465,5 +489,6 @@
       ],
       "true_positives": 6
     }
-  }
+  },
+  "unscored_label_types": {}
 }

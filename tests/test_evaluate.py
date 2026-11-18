@@ -443,3 +443,20 @@ def test_unknown_label_type_does_not_crash_and_is_reported():
 def test_scored_types_are_not_listed_as_unscored():
     lab = [label("journal_lines", "L1", "weekend_posting")]
     assert ev.score([], lab, two_line_ledger(), COSTS).unscored == {}
+
+
+def test_costs_follow_each_label_type():
+    miss = {**COSTS.miss_cost, "near_duplicate_payment": 800.0}
+    miss["typo_duplicate_payment"] = 50.0
+    costs = ev.CostTable(10.0, miss)
+    lab = [
+        label("ap_payments", "P2", "typo_duplicate_payment"),
+        label("ap_payments", "P3", "near_duplicate_payment"),
+    ]
+    r = ev.score([], lab, pay_ledger(), costs).rules["duplicate_fuzzy"]
+    assert r.cost == 850.0
+    assert r.cost_nothing == 850.0
+    caught = [pflag("duplicate_fuzzy", "P3")]
+    r = ev.score(caught, lab, pay_ledger(), costs).rules["duplicate_fuzzy"]
+    assert r.cost == 50.0 + 10.0
+    assert r.cost_nothing == 850.0

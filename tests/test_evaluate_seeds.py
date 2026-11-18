@@ -378,3 +378,57 @@ def test_folder_text_names_label_types_no_rule_scores():
     scores = ev.score([], lab, ledger(lines=lines), ev.DEFAULT_COSTS)
     text = folder_text(scores, 1, None, ev.DEFAULT_COSTS)
     assert "labels of a type no rule scores: future_type 1" in text
+
+
+def test_folder_text_caps_the_unscored_type_lines():
+    lines = [line("JE-1", SAT, line_id="L1")]
+    scores = ev.score([], [], ledger(lines=lines), ev.DEFAULT_COSTS)
+    many = {f"type_{i:04d}": 1 for i in range(1000)}
+    scores = ev.Scores(scores.rules, scores.any_rule, many)
+    text = folder_text(scores, 1000, None, ev.DEFAULT_COSTS)
+    shown = [x for x in text.splitlines() if x.startswith("labels of a type")]
+    assert len(shown) == 10
+    assert "and 990 more types" in text
+
+
+def test_folder_text_cleans_and_caps_unscored_type_names():
+    lines = [line("JE-1", SAT, line_id="L1")]
+    scores = ev.score([], [], ledger(lines=lines), ev.DEFAULT_COSTS)
+    names = {"bad\x1b[31m\nfake line": 1, "y" * 200: 2}
+    scores = ev.Scores(scores.rules, scores.any_rule, names)
+    text = folder_text(scores, 2, None, ev.DEFAULT_COSTS)
+    assert "\x1b" not in text
+    assert "\nfake line" not in text
+    shown = [x for x in text.splitlines() if x.startswith("labels of a type")]
+    assert len(shown) == 2
+    assert all(
+        len(x) <= len("labels of a type no rule scores: ") + 80 + 2 for x in shown
+    )
+
+
+def test_metrics_list_unscored_label_types_and_per_type_miss_costs():
+    doc = metrics_dict(small_report(), COMMAND)
+    assert "unscored_label_types" in doc
+    fuzzy = doc["rules"]["duplicate_fuzzy"]["miss_costs"]
+    assert list(fuzzy) == ["near_duplicate_payment", "typo_duplicate_payment"]
+    assert "near_duplicate_payment 800" in markdown(doc)
+    doc["unscored_label_types"] = {"future_type": 3}
+    assert "| future_type | 3 |" in markdown(doc)
+
+
+def test_planted_duplicates_keep_the_amount_of_an_earlier_payment():
+    ds = generate(Params(seed=7, months=6, size="small", anomaly_rate=0.3))
+    pays = {r["payment_id"]: r for r in ds.tables["ap_payments"]}
+    kinds = ("near_duplicate_payment", "typo_duplicate_payment")
+    found = [x for x in ds.labels if x["anomaly_type"] in kinds]
+    assert found
+    for lab in found:
+        row = pays[lab["row_id"]]
+        same = [
+            p
+            for p in pays.values()
+            if p["payment_id"] != row["payment_id"]
+            and p["amount_cents"] == row["amount_cents"]
+            and p["payment_date"] <= row["payment_date"]
+        ]
+        assert same

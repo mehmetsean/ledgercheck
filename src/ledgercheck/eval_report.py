@@ -7,6 +7,7 @@ from typing import Any
 from .evaluate import (
     BOOTSTRAP_SEED,
     DRAWS,
+    RULE_TYPES,
     CostTable,
     EvalReport,
     RulePooled,
@@ -92,7 +93,7 @@ def _rule_dict(r: RulePooled, report: EvalReport) -> dict[str, Any]:
         "recall_ci": _ci(r.recall_ci),
         "f1": _round(r.f1),
         "f1_ci": _ci(r.f1_ci),
-        "miss_cost": report.costs.miss_cost[r.anomaly_type],
+        "miss_costs": {k: report.costs.miss_cost[k] for k in RULE_TYPES[r.rule]},
         "cost_per_seed": round(r.cost / n, 4),
         "cost_flag_nothing_per_seed": round(r.cost_nothing / n, 4),
         "cost_flag_everything_per_seed": round(r.cost_everything / n, 4),
@@ -105,6 +106,14 @@ def _settings_dict(s: Settings) -> dict[str, float]:
         "invoice_threshold": s.duplicates.invoice_threshold,
         "rare_share": s.rare_share,
     }
+
+
+def _unscored(report: EvalReport) -> dict[str, int]:
+    total: dict[str, int] = {}
+    for s in report.seed_scores:
+        for kind, count in s.unscored.items():
+            total[kind] = total.get(kind, 0) + count
+    return dict(sorted(total.items()))
 
 
 def metrics_dict(report: EvalReport, command: str) -> dict[str, Any]:
@@ -140,6 +149,7 @@ def metrics_dict(report: EvalReport, command: str) -> dict[str, Any]:
         "tuned_rules": {
             k: _rule_dict(r, report) for k, r in report.tuned_rules.items()
         },
+        "unscored_label_types": _unscored(report),
         "any_rule": {
             kind: {
                 "labeled": a.labeled,
@@ -177,12 +187,18 @@ def _f1_rows(doc: dict[str, Any]) -> list[list[str]]:
     ]
 
 
+def _miss_text(costs: dict[str, float]) -> str:
+    if len(costs) == 1:
+        return number(next(iter(costs.values())))
+    return ", ".join(f"{k} {number(v)}" for k, v in costs.items())
+
+
 def _cost_rows(doc: dict[str, Any]) -> list[list[str]]:
     check = doc["costs"]["check_cost"]
     return [
         [
             label,
-            number(r["miss_cost"]),
+            _miss_text(r["miss_costs"]),
             number(check),
             number(r["cost_per_seed"]),
             number(r["cost_flag_nothing_per_seed"]),
@@ -215,6 +231,18 @@ def _cost_lines(doc: dict[str, Any]) -> list[str]:
     ]
 
 
+def _unscored_section(
+    doc: dict[str, Any],
+) -> list[tuple[str, list[str], list[list[str]]]]:
+    found = doc.get("unscored_label_types", {})
+    if not found:
+        return []
+    rows = [["Label type", "Labeled units"]]
+    rows += [[plain(k)[:80], str(v)] for k, v in found.items()]
+    note = "No rule scores these label types. They are not an error."
+    return [("Label types no rule scores", [note], rows)]
+
+
 def sections(doc: dict[str, Any]) -> list[tuple[str, list[str], list[list[str]]]]:
     """Each part: a heading, text lines, then an optional table (head first)."""
     rates = [RATE_HEAD] + rate_rows(doc, True)
@@ -240,6 +268,7 @@ def sections(doc: dict[str, Any]) -> list[tuple[str, list[str], list[list[str]]]
             ],
             [ANY_HEAD] + _any_rows(doc),
         ),
+        *_unscored_section(doc),
         (
             "Cost per seed (placeholder costs, synthetic data)",
             _cost_lines(doc),
@@ -296,6 +325,9 @@ def write_eval_report(out: Path, doc: dict[str, Any], force: bool = False) -> No
     write(out, "README.txt", README + "\n" + doc["method"] + "\n")
 
 
+UNSCORED_SHOWN = 10
+
+
 def _text_table(rows: list[list[str]]) -> list[str]:
     widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
     return [
@@ -327,8 +359,11 @@ def folder_text(
     lines += [f"Check cost {costs.check_cost}. Miss costs by anomaly type:"]
     lines += [f"  {k}: {v}" for k, v in sorted(costs.miss_cost.items())]
     lines += [""] + _text_table(cost_rows)
-    for kind, count in scores.unscored.items():
+    shown = list(scores.unscored.items())
+    for kind, count in shown[:UNSCORED_SHOWN]:
         lines.append(f"labels of a type no rule scores: {_shown(kind)} {count}")
+    if len(shown) > UNSCORED_SHOWN:
+        lines.append(f"and {len(shown) - UNSCORED_SHOWN} more types")
     for rule, r in scores.rules.items():
         for text in r.missed_details:
             lines.append(f"missed by {rule}: {_shown(text)}")

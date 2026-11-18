@@ -178,3 +178,14 @@ def test_only_exact_duplicates_keep_a_precision_of_one() -> None:
     data = json.loads((ROOT / "src/ledgercheck/measured.json").read_text("utf-8"))
     perfect = [k for k, r in data["rules"].items() if r["precision"] == 1.0]
     assert perfect == ["duplicate_exact"]
+
+
+def test_no_stale_typo_sentence_in_shipped_text() -> None:
+    from ledgercheck import measured
+
+    stale = "keep the invoice number"
+    assert stale not in measured.FUZZY_LIMIT
+    assert "typo duplicates" in measured.FUZZY_LIMIT
+    for path in (ROOT / "examples/ledgercheck-seed42-12m").glob("analysis.*"):
+        assert stale not in path.read_text("utf-8"), path.name
+    assert stale not in README

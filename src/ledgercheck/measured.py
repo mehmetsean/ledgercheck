@@ -6,8 +6,11 @@ from typing import Any
 
 SYNTHETIC = "measured on synthetic data (synthbiz)"
 FUZZY_LIMIT = (
-    "synthbiz near duplicates differ only in vendor suffix or punctuation and "
-    "keep the invoice number, so measured fuzzy recall says nothing about typos."
+    "synthbiz plants near duplicates under a new vendor id, with the same invoice "
+    "number and amount. It also plants typo duplicates, with a small change to "
+    "the invoice number (one deletion, duplication or adjacent swap). "
+    "duplicate_fuzzy scores both. The blocked search never finds a duplicate "
+    "whose amount was changed."
 )
 METHOD = (
     "95 percent intervals come from a percentile bootstrap over seeds: "

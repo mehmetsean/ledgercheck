@@ -34,7 +34,7 @@
 <p>Planted anomaly rate 0.1, about 262.0 labeled anomalies per seed. Precision depends on this rate.</p>
 <p>Run defaults, used for the rows named after a rule: fuzzy name_threshold 0.8, invoice_threshold 0.8, rare_share 0.05.</p>
 <p>95 percent intervals come from a percentile bootstrap over seeds: 2000 draws, fixed RNG seed 20261117, seeds resampled with replacement, pooled precision, recall and F1 recomputed from summed counts.</p>
-<p>synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos.</p>
+<p>synthbiz plants near duplicates under a new vendor id, with the same invoice number and amount. It also plants typo duplicates, with a small change to the invoice number (one deletion, duplication or adjacent swap). duplicate_fuzzy scores both. The blocked search never finds a duplicate whose amount was changed.</p>
 <p>A 1.0000 to 1.0000 interval means every report seed scored 1.0000 on synthetic data. It is not a guarantee for real books.</p>
 <p>Reproduce: ledgercheck evaluate --size large --months 12 --tune-seeds 1-10 --seeds 101-130 --rate 0.1</p>
 <table>
