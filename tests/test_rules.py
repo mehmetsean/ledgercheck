@@ -272,8 +272,15 @@ def test_shuffling_changes_no_flag(items: list, seed: int) -> None:  # type: ign
 def test_renaming_users_changes_no_flag(items: list) -> None:  # type: ignore[type-arg]
     from dataclasses import replace
 
-    rename = {"u1": "x-9", "u2": "x-8", "u3": "x-7"}
-    renamed = [replace(x, created_by=rename[x.created_by]) for x in items]
+    rename = {"u1": "x-9", "u2": "x-8", "u3": "x-7", "a1": "b-5"}
+    renamed = [
+        replace(
+            x,
+            created_by=rename[x.created_by],
+            approved_by=rename.get(x.approved_by, x.approved_by),
+        )
+        for x in items
+    ]
     loose = Settings(rare_min_entries=1, rare_share=0.5)
     a = flag_keys(run_rules(ledger(lines=items), loose), rename)
     b = flag_keys(run_rules(ledger(lines=renamed), loose))

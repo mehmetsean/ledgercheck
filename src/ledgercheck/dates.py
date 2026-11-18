@@ -66,14 +66,19 @@ def holidays(year: int) -> dict[date, str]:
     return dict(sorted(out.items()))
 
 
+def holiday_map(
+    years: Iterable[int], extra: Iterable[date] = (), us_holidays: bool = True
+) -> dict[date, str]:
+    """Holiday names for the given years plus the user list. Build once per run."""
+    out: dict[date, str] = {d: "a listed holiday" for d in extra}
+    if us_holidays:
+        for year in set(years):
+            out.update(holidays(year))
+    return out
+
+
 def holiday_name(
     d: date, extra: Iterable[date] = (), us_holidays: bool = True
 ) -> str | None:
     """Name of the holiday on d, or None."""
-    if us_holidays:
-        name = holidays(d.year).get(d)
-        if name:
-            return name
-    if d in set(extra):
-        return "a listed holiday"
-    return None
+    return holiday_map([d.year], extra, us_holidays).get(d)

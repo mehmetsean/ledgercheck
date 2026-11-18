@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from .benford import BenfordResult, benford_first_digit
 from .duplicates import find_duplicates
 from .models import Flag, Ledger, Settings
-from .rules import RULES, run_rules, skip_reasons
+from .rules import RULES, group_entries, run_rules, skip_reasons, unnumbered_count
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,7 @@ class AnalysisResult:
     table_rows: dict[str, int | None]
     dup_k: int
     dup_compares: int
+    unnumbered_ids: int = 0
 
 
 def _benford(ledger: Ledger) -> list[BenfordResult]:
@@ -46,6 +47,9 @@ def analyze(ledger: Ledger, settings: Settings) -> AnalysisResult:
         "ap_payments": ledger.payments,
         "vendors": ledger.vendors,
     }
+    unnumbered = 0
+    if ledger.journal_lines is not None:
+        unnumbered = unnumbered_count(group_entries(ledger.journal_lines))
     rows = {name: None if t is None else len(t) for name, t in tables.items()}
     return AnalysisResult(
         flags=flags,
@@ -55,4 +59,5 @@ def analyze(ledger: Ledger, settings: Settings) -> AnalysisResult:
         table_rows=rows,
         dup_k=dup.k,
         dup_compares=dup.compares,
+        unnumbered_ids=unnumbered,
     )

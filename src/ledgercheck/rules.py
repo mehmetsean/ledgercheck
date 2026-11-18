@@ -2,8 +2,10 @@
 
 import re
 from collections import Counter, defaultdict
+from datetime import date
+from fractions import Fraction
 
-from .dates import WEEKDAYS, holiday_name
+from .dates import WEEKDAYS, holiday_map
 from .models import Flag, Invoice, JournalLine, Ledger, Settings
 
 RULES = (
@@ -33,7 +35,8 @@ NEEDS = {
     "duplicate_fuzzy": ("ap_payments", "ap_invoices", "vendors"),
 }
 
-NUMBERED = re.compile(r"(\D*)([0-9]+)")
+NUMBERED = re.compile(r"(.*?)([0-9]+)")
+DIGITS = re.compile(r"([0-9]+)")
 
 
 def money(cents: int) -> str:
@@ -63,13 +66,23 @@ def skip_reasons(ledger: Ledger) -> dict[str, str]:
     return out
 
 
+def natural_key(text: str) -> tuple[tuple[int, int, str], ...]:
+    """Sort key where digit runs compare as integers, so L2 comes before L10."""
+    parts = DIGITS.split(text)
+    return tuple((0, int(p), "") if i % 2 else (1, 0, p) for i, p in enumerate(parts))
+
+
 def group_entries(lines: tuple[JournalLine, ...]) -> dict[str, list[JournalLine]]:
-    """Lines by je_id, each list sorted by line_id."""
+    """Lines by je_id. Each list is in natural line_id order.
+
+    The first line of a group gives the entry's date, period, source type,
+    creator and approver.
+    """
     entries: dict[str, list[JournalLine]] = defaultdict(list)
     for item in lines:
         entries[item.je_id].append(item)
     for group in entries.values():
-        group.sort(key=lambda x: x.line_id)
+        group.sort(key=lambda x: (natural_key(x.line_id), x.line_id))
     return entries
 
 
@@ -86,9 +99,11 @@ def _weekend(je_id: str, group: list[JournalLine]) -> Flag | None:
     return _flag("weekend_posting", je_id, group, reason)
 
 
-def _holiday(je_id: str, group: list[JournalLine], settings: Settings) -> Flag | None:
+def _holiday(
+    je_id: str, group: list[JournalLine], calendar: dict[date, str]
+) -> Flag | None:
     d = group[0].posting_date
-    name = holiday_name(d, settings.extra_holidays, settings.us_holidays)
+    name = calendar.get(d)
     if name is None:
         return None
     reason = f"Posted on {d.isoformat()}, {name}"
@@ -144,11 +159,13 @@ def _rare_posters(
 
 def journal_flags(lines: tuple[JournalLine, ...], settings: Settings) -> list[Flag]:
     entries = group_entries(lines)
+    years = {x.posting_date.year for x in lines}
+    calendar = holiday_map(years, settings.extra_holidays, settings.us_holidays)
     out: list[Flag] = []
     for je_id, group in entries.items():
         found = [
             _weekend(je_id, group),
-            _holiday(je_id, group, settings),
+            _holiday(je_id, group, calendar),
             _round(je_id, group, settings),
             _no_approver(je_id, group),
             _period(je_id, group),
@@ -169,23 +186,35 @@ def missing_ranges(numbers: list[int]) -> list[tuple[int, int, int, int]]:
     return out
 
 
+def unnumbered_count(entries: dict[str, list[JournalLine]]) -> int:
+    """Entry ids with no trailing digits. entry_number_gap skips them."""
+    return sum(1 for je_id in entries if NUMBERED.fullmatch(je_id) is None)
+
+
 def gap_flags(entries: dict[str, list[JournalLine]]) -> list[Flag]:
-    groups: dict[tuple[str, int], dict[int, str]] = defaultdict(dict)
+    """Missing numbers in the je_id sequence.
+
+    An id is a prefix plus a trailing run of digits, read as an integer of any
+    width. Ids with the same prefix form one sequence, so JE1 to JE9 and JE11
+    flag JE10, and JE-2025-0001 has the prefix JE-2025-. Ids with no trailing
+    digits are skipped. Zero padding follows the id before the gap.
+    """
+    groups: dict[str, dict[int, str]] = defaultdict(dict)
     for je_id in entries:
         match = NUMBERED.fullmatch(je_id)
-        if match is None:
-            continue
-        prefix, digits = match.group(1), match.group(2)
-        groups[(prefix, len(digits))][int(digits)] = je_id
+        if match is not None:
+            groups[match.group(1)][int(match.group(2))] = je_id
     out: list[Flag] = []
-    for (prefix, width), by_number in groups.items():
+    for prefix, by_number in groups.items():
         for first, last, before, after in missing_ranges(list(by_number)):
-            name = f"{prefix}{first:0{width}d}"
+            digits = NUMBERED.fullmatch(by_number[before])
+            pad = len(digits.group(2)) if digits and digits.group(2)[0] == "0" else 0
+            name = f"{prefix}{first:0{pad}d}"
             ids = (by_number[before], by_number[after])
             if first == last:
                 reason = f"Entry number {name} is missing from the sequence"
             else:
-                end = f"{prefix}{last:0{width}d}"
+                end = f"{prefix}{last:0{pad}d}"
                 reason = f"Entry numbers {name} to {end} are missing"
             out.append(Flag("entry_number_gap", "journal_lines", name, ids, reason))
     return out
@@ -193,8 +222,9 @@ def gap_flags(entries: dict[str, list[JournalLine]]) -> list[Flag]:
 
 def _in_band(inv: Invoice, settings: Settings) -> bool:
     limit = settings.approval_limit_cents
-    low = limit * (1 - settings.split_band)
-    return low <= inv.amount_cents < limit
+    band = Fraction(settings.split_band).limit_denominator(1_000_000)
+    below = limit - inv.amount_cents
+    return 0 < below and below * band.denominator <= limit * band.numerator
 
 
 def _split_groups(items: list[Invoice], settings: Settings) -> list[list[Invoice]]:
@@ -220,6 +250,13 @@ def _split_groups(items: list[Invoice], settings: Settings) -> list[list[Invoice
 
 
 def split_flags(invoices: tuple[Invoice, ...], settings: Settings) -> list[Flag]:
+    """Invoices of one vendor, each just under the limit, close together.
+
+    Grouping is greedy and disjoint. A group starts at the earliest unused
+    invoice and takes every invoice within split_window_days of that start.
+    A single day-0, day-6, day-12 run with a 7 day window groups only the
+    first two, and the day-12 invoice starts its own check.
+    """
     by_vendor: dict[str, list[Invoice]] = defaultdict(list)
     for inv in invoices:
         if _in_band(inv, settings):
