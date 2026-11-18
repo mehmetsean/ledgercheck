@@ -66,6 +66,20 @@ def rate_table(rows: dict[str, Any]) -> list[str]:
     return lines
 
 
+def count_note(data: dict[str, Any]) -> str:
+    seeds = len(data["report_seeds"])
+    r = data["rules"]["split_under_limit"]
+    total = r["true_positives"] + r["false_positives"]
+    return (
+        f"Flags and counts are summed over the {seeds} report seeds. Precision is "
+        "true positives over true plus false positives, counted per labeled unit, "
+        "so one flag that covers several units makes Flags differ from that sum. "
+        f"split_under_limit is the example: {r['flags']} flags, "
+        f"{r['true_positives']} true positives plus {r['false_positives']} false "
+        f"positives is {total}."
+    )
+
+
 def measured_lines() -> list[str]:
     data = json.loads(MEASURED.read_text("utf-8"))
     p = data["params"]
@@ -82,6 +96,8 @@ def measured_lines() -> list[str]:
         f"{s['defaults']['invoice_threshold']} invoice_threshold.",
         "",
         *rate_table(data["rules"]),
+        "",
+        count_note(data),
         "",
         "Tuned rows (settings picked on the tuning seeds):",
         "",
@@ -102,8 +118,12 @@ def run_clean() -> Counter[str]:
     with tempfile.TemporaryDirectory() as tmp:
         data = Path(tmp) / "clean"
         out = Path(tmp) / "out"
-        synthbiz_main(["generate", "--anomaly-rate", "0", "--out", str(data)])
-        ledgercheck_main(["run", str(data), "--out", str(out)])
+        code = synthbiz_main(["generate", "--anomaly-rate", "0", "--out", str(data)])
+        if code not in (0, None):
+            raise SystemExit(code)
+        code = ledgercheck_main(["run", str(data), "--out", str(out)])
+        if code != 0:
+            raise SystemExit(code)
         return count_rules(out / "items_to_check.csv")
 
 
@@ -135,7 +155,12 @@ def clean_lines() -> list[str]:
 
 def benchmark_lines() -> list[str]:
     lines = ["### Duplicate search benchmark", ""]
-    lines.append("From docs/benchmark.md (synthbiz, seed 42, size large).")
+    lines.append(
+        "Rows are copied from docs/benchmark.md and this script does not rerun "
+        "them. Times are from one machine, see that file for the machine. A test "
+        "reruns the exact key and blocked methods on 12 months and checks their "
+        "compare counts and near duplicate recall against that file."
+    )
     for sec in parse_benchmark(BENCHMARK.read_text("utf-8")):
         lines += ["", f"{sec.title}:", ""]
         lines += ["| Method | Pair compares | Time s | Near P | Near R |"]
@@ -183,8 +208,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--readme", type=Path, default=ROOT / "README.md")
     args = parser.parse_args(argv)
-    old = args.readme.read_text(encoding="utf-8")
-    new = replace_block(old, build_block())
+    try:
+        old = args.readme.read_text(encoding="utf-8")
+        new = replace_block(old, build_block())
+    except (OSError, ValueError) as e:
+        print(f"error: {e}")
+        return 2
     if args.check:
         if new != old:
             print("README numbers are out of date, run scripts/reproduce_readme.py")

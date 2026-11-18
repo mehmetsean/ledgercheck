@@ -39,7 +39,8 @@ def read_all(folder: Path) -> dict[str, bytes]:
     files = {}
     for name in (DATA, OUT):
         for path in sorted((folder / name).glob("*")):
-            files[f"{name}/{path.name}"] = path.read_bytes()
+            if path.is_file():
+                files[f"{name}/{path.name}"] = path.read_bytes()
     return files
 
 
