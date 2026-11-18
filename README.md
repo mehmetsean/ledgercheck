@@ -2,7 +2,7 @@
 
 ledgercheck checks CSV exports of journal entries, AP invoices and AP payments for patterns worth a second look. It uses only the Python standard library and runs on your own machine. It writes a list of items to check, with a plain reason for each one. It also scores nine rules against synthbiz data, where the anomalies are labeled, so each scored rule has a measured precision and recall next to it. Every flag is an item to check, not a finding of fraud or error. The output is an analysis.
 
-Status: version 0.1.0, not released yet.
+Status: version 0.1.0. Changes are listed in CHANGELOG.md.
 
 A sample output is in examples/ledgercheck-seed42-12m/analysis.md. It is made from synthetic data.
 
@@ -232,7 +232,7 @@ After `pip install -e ".[eval]"`, `python benchmarks/bench.py` times exact-key m
 
 ## Demo
 
-The demo runs in your browser at https://mehmetsean.github.io/ledgercheck/ once the repo is public. Until then, build and run it locally.
+The demo runs in your browser at https://mehmetsean.github.io/ledgercheck/. You can also build and run it locally.
 
 It has two modes. Synthetic data makes synthbiz data from a seed, a size, a number of months and a planted anomaly rate, runs the rules and scores each flag as a hit, a false alarm or a miss, with precision, recall and F1 per rule. Your files lets you choose CSV files, say which file is which table and which column is which field, and run. It shows the items to check and a Benford table, and it gives you items_to_check.csv to download. Files are read in the page and nothing is uploaded. The page serves Python (Pyodide) and both wheels from its own site, and its Content-Security-Policy blocks any background request to another host. Links you click still open. GitHub Pages sees the normal page request (IP address, browser), as any web host does, and never your files. A meta CSP cannot set frame-ancestors and GitHub Pages cannot set headers, so another site could frame the page. The page has no login and sets no cookies. A framed copy cannot read your files or the results, but framing is a known limit. A browser test in CI fails on any request to another host. The page stops at 150 MB of files in total, because a browser tab can run out of memory. The command line has no such limit.
 
