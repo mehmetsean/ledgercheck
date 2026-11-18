@@ -298,4 +298,3 @@ def test_gap_finds_exactly_removed_numbers(removed: set[int]) -> None:
     for first, last, _, _ in missing_ranges(kept):
         found.update(range(first, last + 1))
     assert found == removed
-
