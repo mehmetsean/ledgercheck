@@ -19,7 +19,10 @@ from .models import (
 
 MAX_ROWS_PER_FILE = 3_000_000
 MAX_TOTAL_ROWS = 5_000_000
-MAX_FIELD_CHARS = 1_000
+MAX_FILE_BYTES = 500_000_000
+MAX_TOTAL_BYTES = 1_000_000_000
+FIELD_CAP = 128
+NAME_CAP = 256
 
 TEXT = "text"
 DATE = "date"
@@ -64,9 +67,25 @@ DOLLAR_RE = re.compile(r"-?[0-9]{1,16}(\.[0-9]{1,2})?")
 ISO_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
 
+def plain(text: str) -> str:
+    """Printable ASCII only, so file names cannot move the cursor or hide text."""
+    keep = (
+        c if 32 <= ord(c) < 127 else c.encode("unicode_escape").decode() for c in text
+    )
+    return "".join(keep)
+
+
 class _Budget:
     def __init__(self) -> None:
         self.total = 0
+        self.bytes = 0
+
+    def add_bytes(self, name: str, size: int) -> None:
+        if size > MAX_FILE_BYTES:
+            raise ValueError(f"{name}: file is larger than {MAX_FILE_BYTES} bytes")
+        self.bytes += size
+        if self.bytes > MAX_TOTAL_BYTES:
+            raise ValueError(f"{name}: folder has more than {MAX_TOTAL_BYTES} bytes")
 
     def add(self, name: str) -> None:
         self.total += 1
@@ -115,8 +134,6 @@ def _convert(
     kind: str, value: str, cmap: ColumnMap, name: str, line: int, column: str
 ) -> Any:
     if kind == TEXT:
-        if len(value) > MAX_FIELD_CHARS:
-            raise _fail(name, line, column, f"text longer than {MAX_FIELD_CHARS}")
         return value
     if kind == DATE:
         return _parse_date(value, cmap.date_format, name, line, column)
@@ -141,10 +158,11 @@ def _header_positions(
 def _read_rows(
     path: Path, table: str, cmap: ColumnMap, budget: _Budget
 ) -> list[list[Any]]:
-    name = path.name
+    name = plain(path.name)
     spec = SPECS[table]
     rows: list[list[Any]] = []
     try:
+        budget.add_bytes(name, path.stat().st_size)
         with path.open(newline="", encoding="utf-8-sig") as f:
             reader = csv.reader(f, strict=True)
             header = next(reader, None)
@@ -152,11 +170,11 @@ def _read_rows(
                 raise ValueError(f"{name}: file is empty")
             positions = _header_positions(name, header, table, cmap)
             for row in reader:
+                line = reader.line_num
+                if line > MAX_ROWS_PER_FILE + 1:
+                    raise ValueError(f"{name}: more than {MAX_ROWS_PER_FILE} lines")
                 if not row:
                     continue
-                line = reader.line_num
-                if len(rows) >= MAX_ROWS_PER_FILE:
-                    raise ValueError(f"{name}: more than {MAX_ROWS_PER_FILE} rows")
                 budget.add(name)
                 if len(row) != len(header):
                     raise ValueError(
@@ -166,6 +184,9 @@ def _read_rows(
                 values = []
                 for (field, kind), pos in zip(spec, positions, strict=True):
                     column = cmap.columns.get(table, {}).get(field, field)
+                    cap = NAME_CAP if field == "vendor_name" else FIELD_CAP
+                    if len(row[pos]) > cap:
+                        raise _fail(name, line, column, f"longer than {cap} characters")
                     values.append(_convert(kind, row[pos], cmap, name, line, column))
                 rows.append(values)
     except UnicodeDecodeError:
@@ -187,6 +208,8 @@ def _load(
     path = folder / cmap.files.get(table, f"{table}.csv")
     if path.parent != folder:
         raise ValueError(f"{table}: file name must not contain a folder")
+    if path.is_symlink():
+        raise ValueError(f"{plain(path.name)}: is a symbolic link, not read")
     if not path.is_file():
         return None
     return tuple(build(*row) for row in _read_rows(path, table, cmap, budget))
@@ -195,7 +218,7 @@ def _load(
 def read_folder(path: Path, column_map: ColumnMap | None = None) -> Ledger:
     """Read the four tables. A table with no file is left as None."""
     if not path.is_dir():
-        raise ValueError(f"folder not found: {path}")
+        raise ValueError(f"folder not found: {plain(str(path))}")
     cmap = column_map or ColumnMap()
     budget = _Budget()
     ledger = Ledger(
@@ -205,5 +228,5 @@ def read_folder(path: Path, column_map: ColumnMap | None = None) -> Ledger:
         vendors=_load(path, "vendors", cmap, budget, Vendor),
     )
     if all(t is None for t in (ledger.journal_lines, ledger.invoices, ledger.payments)):
-        raise ValueError(f"no table files found in {path}")
+        raise ValueError(f"no table files found in {plain(str(path))}")
     return ledger

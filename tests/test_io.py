@@ -129,14 +129,16 @@ def test_huge_field_in_csv_module(tmp_path: Path) -> None:
 
 def test_long_text_field(tmp_path: Path) -> None:
     folder = folder_with_journal(tmp_path, [journal_row(user="u" * 5_000)])
-    with pytest.raises(ValueError, match="column created_by: text longer than"):
+    with pytest.raises(
+        ValueError, match="column created_by: longer than 128 characters"
+    ):
         io.read_folder(folder)
 
 
 def test_row_cap_per_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(io, "MAX_ROWS_PER_FILE", 2)
     rows = [journal_row(line=f"L{i}") for i in range(3)]
-    with pytest.raises(ValueError, match="more than 2 rows"):
+    with pytest.raises(ValueError, match="more than 2 lines"):
         io.read_folder(folder_with_journal(tmp_path, rows))
 
 
@@ -280,3 +282,106 @@ def test_settings_file(tmp_path: Path) -> None:
 def test_bad_settings(tmp_path: Path, data: object) -> None:
     with pytest.raises(ValueError, match="map.json"):
         load_settings(write_map(tmp_path, data))
+
+
+def test_byte_cap_per_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(io, "MAX_FILE_BYTES", 100)
+    folder = folder_with_journal(tmp_path, [journal_row()])
+    with pytest.raises(ValueError, match="journal_lines.csv: file is larger than 100"):
+        io.read_folder(folder)
+
+
+def test_byte_cap_per_folder(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    write_csv(tmp_path / "vendors.csv", ["vendor_id", "vendor_name"], [["V1", "A"]])
+    size = (tmp_path / "vendors.csv").stat().st_size
+    monkeypatch.setattr(io, "MAX_TOTAL_BYTES", size + 10)
+    with pytest.raises(ValueError, match="folder has more than"):
+        io.read_folder(folder_with_journal(tmp_path, [journal_row()]))
+
+
+def test_blank_lines_count_toward_the_line_cap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(io, "MAX_ROWS_PER_FILE", 3)
+    text = ",".join(JOURNAL_HEADER) + "\n" + "\n" * 5
+    (tmp_path / "journal_lines.csv").write_text(text)
+    with pytest.raises(ValueError, match="more than 3 lines"):
+        io.read_folder(tmp_path)
+
+
+def test_real_field_caps(tmp_path: Path) -> None:
+    ok = folder_with_journal(tmp_path, [journal_row(user="u" * 128)])
+    assert io.read_folder(ok).journal_lines is not None
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    write_csv(bad / "journal_lines.csv", JOURNAL_HEADER, [journal_row(user="u" * 129)])
+    with pytest.raises(ValueError, match="longer than 128 characters"):
+        io.read_folder(bad)
+    write_csv(
+        tmp_path / "vendors.csv", ["vendor_id", "vendor_name"], [["V", "n" * 256]]
+    )
+    assert io.read_folder(tmp_path).vendors is not None
+    write_csv(
+        tmp_path / "vendors.csv", ["vendor_id", "vendor_name"], [["V", "n" * 257]]
+    )
+    with pytest.raises(ValueError, match="longer than 256 characters"):
+        io.read_folder(tmp_path)
+
+
+def test_symlinked_input_is_refused(tmp_path: Path) -> None:
+    real = tmp_path / "real"
+    real.mkdir()
+    write_csv(real / "journal_lines.csv", JOURNAL_HEADER, [journal_row()])
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "journal_lines.csv").symlink_to(real / "journal_lines.csv")
+    with pytest.raises(ValueError, match="journal_lines.csv: is a symbolic link"):
+        io.read_folder(data)
+
+
+def test_dangling_symlink_is_refused(tmp_path: Path) -> None:
+    (tmp_path / "vendors.csv").symlink_to(tmp_path / "nowhere.csv")
+    with pytest.raises(ValueError, match="is a symbolic link"):
+        io.read_folder(tmp_path)
+
+
+def test_plain_escapes_odd_characters() -> None:
+    assert io.plain("a\x1b[31m\n") == "a\\x1b[31m\\n"
+    assert io.plain("café") == "caf\\xe9"
+
+
+def test_odd_file_names_are_escaped_in_errors(tmp_path: Path) -> None:
+    (tmp_path / "gl\x1bx.csv").write_text("a\n")
+    cmap = ColumnMap(files={"journal_lines": "gl\x1bx.csv"})
+    with pytest.raises(ValueError) as err:
+        io.read_folder(tmp_path, cmap)
+    assert "\x1b" not in str(err.value)
+    assert "gl\\x1bx.csv" in str(err.value)
+
+
+def test_settings_caps(tmp_path: Path) -> None:
+    for data in (
+        {"split_window_days": 3_661},
+        {"duplicates": {"window_days": 3_661}},
+        {"extra_holidays": ["2025-01-01"] * 10_001},
+        {"round_step_cents": 10**15 + 1},
+        {"approval_limit_cents": 10**400},
+        {"duplicates": {"max_cell_steps": 10**16}},
+    ):
+        with pytest.raises(ValueError, match="map.json"):
+            load_settings(write_map(tmp_path, data))
+    ok = load_settings(
+        write_map(
+            tmp_path, {"split_window_days": 3_660, "approval_limit_cents": 10**15}
+        )
+    )
+    assert ok.split_window_days == 3_660
+
+
+def test_error_names_for_wrong_types(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="rare_min_entries must be an integer"):
+        load_settings(write_map(tmp_path, {"rare_min_entries": "x"}))
+    with pytest.raises(ValueError, match="rare_share must be a number"):
+        load_settings(write_map(tmp_path, {"rare_share": "x"}))
+    with pytest.raises(ValueError, match="us_holidays must be true or false"):
+        load_settings(write_map(tmp_path, {"us_holidays": 3}))

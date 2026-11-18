@@ -6,26 +6,29 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from .io import SPECS
+from .io import SPECS, plain
 from .models import ColumnMap, DuplicateSettings, Settings
 
 MAX_JSON_BYTES = 1_000_000
+MAX_SETTING = 10**15
+MAX_DAYS = 3_660
+MAX_HOLIDAYS = 10_000
 ARTICLES: dict[Any, str] = {int: "an integer", float: "a number", bool: "true or false"}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
     try:
         if path.stat().st_size > MAX_JSON_BYTES:
-            raise ValueError(f"{path.name}: file is too large")
+            raise ValueError(f"{plain(path.name)}: file is too large")
         data = json.loads(path.read_text("utf-8-sig"))
     except OSError as e:
         raise ValueError(
-            f"{path.name}: could not read the file ({e.strerror})"
+            f"{plain(path.name)}: could not read the file ({e.strerror})"
         ) from None
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
-        raise ValueError(f"{path.name}: not valid JSON") from None
+        raise ValueError(f"{plain(path.name)}: not valid JSON") from None
     if not isinstance(data, dict):
-        raise ValueError(f"{path.name}: top level must be an object")
+        raise ValueError(f"{plain(path.name)}: top level must be an object")
     return data
 
 
@@ -47,7 +50,7 @@ def _string_map(name: str, where: str, data: Any, allowed: set[str]) -> dict[str
 
 def load_column_map(path: Path) -> ColumnMap:
     data = _load_json(path)
-    name = path.name
+    name = plain(path.name)
     _check_keys(
         name, "the top level", data, {"files", "columns", "date_format", "amounts"}
     )
@@ -105,12 +108,14 @@ def _fill(name: str, data: dict[str, Any], cls: type, skip: set[str]) -> dict[st
 
 def load_settings(path: Path) -> Settings:
     data = _load_json(path)
-    name = path.name
+    name = plain(path.name)
     values = _fill(name, data, Settings, {"extra_holidays", "duplicates"})
     holidays: list[date] = []
     raw = data.get("extra_holidays", [])
     if not isinstance(raw, list):
         raise ValueError(f"{name}: extra_holidays must be a list of dates")
+    if len(raw) > MAX_HOLIDAYS:
+        raise ValueError(f"{name}: extra_holidays has more than {MAX_HOLIDAYS} dates")
     for item in raw:
         try:
             holidays.append(date.fromisoformat(item))
@@ -131,17 +136,31 @@ def load_settings(path: Path) -> Settings:
 
 def _check_ranges(name: str, s: Settings) -> None:
     d = s.duplicates
+    whole = {
+        "approval_limit_cents": s.approval_limit_cents,
+        "round_step_cents": s.round_step_cents,
+        "rare_min_entries": s.rare_min_entries,
+        "split_window_days": s.split_window_days,
+        "window_days": d.window_days,
+        "max_cell_steps": d.max_cell_steps,
+    }
+    for key, value in whole.items():
+        if abs(value) > MAX_SETTING:
+            raise ValueError(f"{name}: {key} must be at most {MAX_SETTING}")
     checks = [
         (s.approval_limit_cents > 0, "approval_limit_cents must be above 0"),
         (s.round_step_cents > 0, "round_step_cents must be above 0"),
         (0 <= s.rare_share <= 1, "rare_share must be from 0 to 1"),
         (s.rare_min_entries >= 1, "rare_min_entries must be at least 1"),
-        (s.split_window_days >= 0, "split_window_days must be 0 or more"),
+        (
+            0 <= s.split_window_days <= MAX_DAYS,
+            f"split_window_days must be 0 to {MAX_DAYS}",
+        ),
         (0 < s.split_band <= 1, "split_band must be above 0 and at most 1"),
-        (d.window_days >= 0, "window_days must be 0 or more"),
+        (0 <= d.window_days <= MAX_DAYS, f"window_days must be 0 to {MAX_DAYS}"),
         (0 <= d.name_threshold <= 1, "name_threshold must be from 0 to 1"),
         (0 <= d.invoice_threshold <= 1, "invoice_threshold must be from 0 to 1"),
-        (d.max_compares >= 1, "max_compares must be at least 1"),
+        (d.max_cell_steps >= 1, "max_cell_steps must be at least 1"),
     ]
     for ok, message in checks:
         if not ok:
