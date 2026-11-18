@@ -2,6 +2,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -87,3 +88,145 @@ def test_step_counter_counts_and_restores_the_meter() -> None:
     assert steps > 0
     assert len(result.pairs) == 1
     assert bench.dup._Meter is original
+
+
+class _Recorder(bench.dup._Meter):
+    total = 0
+
+    def add(self, cost: int) -> None:
+        _Recorder.total += cost
+        super().add(cost)
+
+
+def test_count_steps_matches_the_real_meter_and_result() -> None:
+    cfg = DuplicateSettings()
+    led = _two_payments()
+    original = bench.dup._Meter
+    bench.dup._Meter = _Recorder  # type: ignore[misc]
+    try:
+        direct = find_duplicates(led, cfg)
+    finally:
+        bench.dup._Meter = original  # type: ignore[misc]
+    steps, result = bench.count_steps(lambda: find_duplicates(led, cfg))
+    assert result == direct
+    assert steps == _Recorder.total
+
+
+def test_count_steps_restores_the_meter_when_fn_raises() -> None:
+    original = bench.dup._Meter
+
+    def boom() -> None:
+        raise RuntimeError("stop")
+
+    with pytest.raises(RuntimeError):
+        bench.count_steps(boom)
+    assert bench.dup._Meter is original
+
+
+def test_main_quick_writes_the_doc(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    out = tmp_path / "x.md"
+    monkeypatch.setattr(sys, "argv", ["bench.py", "--quick", "--out", str(out)])
+    assert bench.main() == 0
+    text = out.read_text(encoding="utf-8")
+    assert "missing from blocked fuzzy: 0." in text
+    assert "This is a quick run (size small, 3 months, 1 run)" in text
+    assert "## small, 3 months" in text
+
+
+def test_main_returns_one_when_blocking_misses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake = DuplicatePair("fuzzy", "PX", "PY", 1.0, 1.0, 2, True, "made up")
+    monkeypatch.setattr(sys, "argv", ["bench.py", "--quick"])
+    monkeypatch.setattr(bench, "check_blocking", lambda *a: (1, 0, 0, 0, [fake]))
+    assert bench.main() == 1
+
+
+def _scripted(monkeypatch: pytest.MonkeyPatch, times: list[float]) -> list[int]:
+    calls: list[int] = []
+    queue = iter(times)
+
+    def fake(fn):  # type: ignore[no-untyped-def]
+        calls.append(1)
+        return next(queue), "r"
+
+    monkeypatch.setattr(bench, "one_run", fake)
+    return calls
+
+
+def test_median_time_is_the_median(monkeypatch: pytest.MonkeyPatch) -> None:
+    _scripted(monkeypatch, [3.0, 1.0, 2.0])
+    seconds, runs, result = bench.median_time(lambda: None, 3)
+    assert (seconds, runs, result) == (2.0, 3, "r")
+
+
+def test_slow_mode_stops_after_the_first_run_over_the_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = _scripted(monkeypatch, [bench.SLOW_SECONDS + 1, 1.0, 1.0])
+    seconds, runs, _ = bench.median_time(lambda: None, 3, slow=True)
+    assert (runs, len(calls)) == (1, 1)
+    assert seconds == bench.SLOW_SECONDS + 1
+
+
+def test_slow_mode_keeps_repeating_fast_runs(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = _scripted(monkeypatch, [1.0, 2.0, 3.0])
+    assert bench.median_time(lambda: None, 3, slow=True)[1] == 3
+    assert len(calls) == 3
+
+
+@pytest.mark.parametrize("value", ["0", "-2"])
+def test_repeat_must_be_positive(
+    value: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["bench.py", "--repeat", value])
+    with pytest.raises(SystemExit) as info:
+        bench.main()
+    assert info.value.code == 2
+    assert "1 or more" in capsys.readouterr().err
+
+
+def test_symlink_out_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = tmp_path / "real.md"
+    target.write_text("keep", encoding="utf-8")
+    link = tmp_path / "link.md"
+    link.symlink_to(target)
+    monkeypatch.setattr(sys, "argv", ["bench.py", "--quick", "--out", str(link)])
+    with pytest.raises(SystemExit) as info:
+        bench.main()
+    assert info.value.code == 2
+    assert target.read_text(encoding="utf-8") == "keep"
+    assert "symbolic link" in capsys.readouterr().err
+
+
+def test_table_header_columns() -> None:
+    case = {"rows": []}
+    header = bench.table(case).splitlines()[0]
+    assert header.split(" | ")[0] == "| method"
+    assert [c.strip() for c in header.strip("|").split("|")] == [
+        "method",
+        "time s",
+        "runs",
+        "pair compares",
+        "cell steps",
+        "flags",
+        "exact TP/FP/miss",
+        "exact P",
+        "exact R",
+        "near TP/FP/miss",
+        "near P",
+        "near R",
+    ]
+
+
+def test_step_rate_labels_use_real_lengths() -> None:
+    labels = [label for label, _, _ in bench.step_rate()]
+    assert labels == [
+        "vendor name, 22 and 21 characters",
+        "vendor name, 39 and 40 characters",
+        "long name, 100 and 100 characters",
+    ]
