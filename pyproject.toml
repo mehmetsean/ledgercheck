@@ -13,6 +13,9 @@ license-files = ["LICENSE"]
 dependencies = []
 
 [project.optional-dependencies]
+eval = [
+    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@47a763a79681805e7dcb992c7d47e5166a83aa09",
+]
 dev = [
     "pytest",
     "pytest-cov",

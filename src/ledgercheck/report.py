@@ -19,7 +19,8 @@ NOTICE = (
 DISCLAIMER = (
     "Decision support only, not legal, tax, accounting or assurance advice. "
     "No guarantee of compliance, and no guarantee that all errors or duplicate "
-    "payments are found. False positives and misses are expected."
+    "payments are found. False positives and misses are expected; the measured "
+    "rates are shown."
 )
 FLAG_NOTE = (
     "Every line is an item to check. It is not a finding of fraud or error. "
