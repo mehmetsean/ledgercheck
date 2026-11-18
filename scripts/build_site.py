@@ -10,6 +10,7 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -33,6 +34,7 @@ CORE_FILES = (
     "python_stdlib.zip",
     "pyodide-lock.json",
 )
+SOURCE_DATE_EPOCH = "1763337600"
 PIN = re.compile(r'"(synthbiz @ git\+https://github\.com/[^"@]+@[0-9a-f]{40})"')
 
 
@@ -42,10 +44,10 @@ def check_sha256(path: Path, expected: str) -> None:
         raise SystemExit(f"sha256 mismatch for {path.name}: {found}, wanted {expected}")
 
 
-def check_sri(path: Path, expected: str) -> None:
-    found = base64.b64encode(hashlib.sha384(path.read_bytes()).digest()).decode()
+def check_sri(data: bytes, expected: str) -> None:
+    found = base64.b64encode(hashlib.sha384(data).digest()).decode()
     if found != expected:
-        raise SystemExit(f"sha384 mismatch for {path.name}: {found}")
+        raise SystemExit(f"sha384 mismatch for pyodide.js: {found}")
 
 
 def download(url: str, dest: Path) -> None:
@@ -71,19 +73,24 @@ def fetch_tarball(cache: Path) -> Path:
     return path
 
 
-def extract_core(tarball: Path, out: Path) -> None:
-    """Copy only CORE_FILES out of the archive, by name, as plain bytes."""
+def extract_core(tarball: Path, out: Path, sri: str = PYODIDE_JS_SRI) -> None:
+    """Copy only CORE_FILES out of the archive, by exact path, as plain bytes.
+
+    The sha384 of pyodide.js is checked before anything is written.
+    """
+    wanted = {f"pyodide/{name}": name for name in CORE_FILES}
     found: dict[str, bytes] = {}
     with tarfile.open(tarball, "r:bz2") as tar:
         for member in tar.getmembers():
-            name = Path(member.name).name
-            if name in CORE_FILES and member.isfile() and name not in found:
+            name = wanted.get(member.name)
+            if name is not None and member.isfile() and name not in found:
                 data = tar.extractfile(member)
                 if data is not None:
                     found[name] = data.read()
     missing = [n for n in CORE_FILES if n not in found]
     if missing:
         raise SystemExit(f"the Pyodide archive is missing {missing}")
+    check_sri(found["pyodide.js"], sri)
     out.mkdir(parents=True, exist_ok=True)
     for name in CORE_FILES:
         (out / name).write_bytes(found[name])
@@ -99,7 +106,8 @@ def pinned_synthbiz(pyproject: Path) -> str:
 def build_wheel(target: str, out: Path) -> str:
     before = {p.name for p in out.glob("*.whl")}
     cmd = [sys.executable, "-m", "pip", "wheel", target, "--no-deps", "-w", str(out)]
-    subprocess.run(cmd, check=True, cwd=ROOT)
+    env = {**os.environ, "SOURCE_DATE_EPOCH": SOURCE_DATE_EPOCH}
+    subprocess.run(cmd, check=True, cwd=ROOT, env=env)
     new = sorted({p.name for p in out.glob("*.whl")} - before)
     if len(new) != 1:
         raise SystemExit(f"expected one new wheel for {target}, found {new}")
@@ -112,9 +120,9 @@ def write_manifest(out: Path, wheels: list[str]) -> None:
 
 
 def clear(out: Path) -> None:
+    if out.name != "_site" or not out.resolve().is_relative_to(ROOT.resolve()):
+        raise SystemExit(f"{out}: the output folder must be named _site, inside {ROOT}")
     if out.exists():
-        if out.name != "_site":
-            raise SystemExit(f"{out} exists, remove it first")
         shutil.rmtree(out)
     out.mkdir(parents=True)
 
@@ -124,11 +132,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=ROOT / "_site")
     parser.add_argument("--cache", type=Path, default=ROOT / ".cache")
     args = parser.parse_args(argv)
-    tarball = fetch_tarball(args.cache)
     clear(args.out)
+    tarball = fetch_tarball(args.cache)
     shutil.copytree(ROOT / "site", args.out, dirs_exist_ok=True)
     extract_core(tarball, args.out / "pyodide")
-    check_sri(args.out / "pyodide" / "pyodide.js", PYODIDE_JS_SRI)
     wheels = args.out / "wheels"
     wheels.mkdir()
     names = [build_wheel(".", wheels)]

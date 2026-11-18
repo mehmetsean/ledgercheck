@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import io
 import json
@@ -30,15 +31,23 @@ def test_check_sha256_accepts_and_refuses(tmp_path: Path) -> None:
         build_site.check_sha256(f, "0" * 64)
 
 
+def sri_of(data: bytes) -> str:
+    return base64.b64encode(hashlib.sha384(data).digest()).decode()
+
+
+def good_members() -> dict[str, bytes]:
+    return {f"pyodide/{n}": n.encode() for n in build_site.CORE_FILES}
+
+
 def test_extract_core_copies_only_the_listed_files(tmp_path: Path) -> None:
-    members = {f"pyodide/{n}": n.encode() for n in build_site.CORE_FILES}
+    members = good_members()
     members["pyodide/python"] = b"#!/bin/sh\nexit 1\n"
     members["../evil.txt"] = b"x"
     tar = tmp_path / "core.tar.bz2"
     make_tar(tar, members)
     out = tmp_path / "out"
     out.mkdir()
-    build_site.extract_core(tar, out)
+    build_site.extract_core(tar, out, sri_of(b"pyodide.js"))
     assert sorted(p.name for p in out.iterdir()) == sorted(build_site.CORE_FILES)
     assert not (tmp_path / "evil.txt").exists()
     assert not (out / "python").exists()
@@ -50,18 +59,30 @@ def test_extract_core_fails_when_a_file_is_missing(tmp_path: Path) -> None:
     out = tmp_path / "out"
     out.mkdir()
     with pytest.raises(SystemExit, match="missing"):
-        build_site.extract_core(tar, out)
+        build_site.extract_core(tar, out, sri_of(b"x"))
 
 
-def test_check_sri_compares_sha384(tmp_path: Path) -> None:
-    f = tmp_path / "pyodide.js"
-    f.write_bytes(b"abc")
-    import base64
+def test_extract_core_uses_the_exact_path(tmp_path: Path) -> None:
+    members = {f"other/{n}": b"x" for n in build_site.CORE_FILES}
+    tar = tmp_path / "core.tar.bz2"
+    make_tar(tar, members)
+    with pytest.raises(SystemExit, match="missing"):
+        build_site.extract_core(tar, tmp_path / "out", sri_of(b"x"))
 
-    sri = base64.b64encode(hashlib.sha384(b"abc").digest()).decode()
-    build_site.check_sri(f, sri)
+
+def test_extract_core_checks_the_sri_before_writing(tmp_path: Path) -> None:
+    tar = tmp_path / "core.tar.bz2"
+    make_tar(tar, good_members())
+    out = tmp_path / "out"
     with pytest.raises(SystemExit, match="sha384"):
-        build_site.check_sri(f, "AAAA")
+        build_site.extract_core(tar, out)
+    assert not out.exists()
+
+
+def test_check_sri_compares_sha384() -> None:
+    build_site.check_sri(b"abc", sri_of(b"abc"))
+    with pytest.raises(SystemExit, match="sha384"):
+        build_site.check_sri(b"abc", "AAAA")
 
 
 def test_pinned_synthbiz_comes_from_pyproject() -> None:
@@ -92,3 +113,40 @@ def test_constants_look_right() -> None:
         "https://github.com/pyodide/pyodide/releases/download/"
     )
     assert build_site.PYODIDE_VERSION in build_site.PYODIDE_URL
+
+
+def test_fetch_tarball_refuses_a_bad_cached_file(tmp_path: Path) -> None:
+    cached = tmp_path / build_site.TARBALL
+    cached.write_bytes(b"not the archive")
+    with pytest.raises(SystemExit, match="sha256"):
+        build_site.fetch_tarball(tmp_path)
+    assert not cached.exists()
+
+
+def test_download_refuses_non_https(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit, match="https"):
+        build_site.download("http://example.com/x", tmp_path / "x")
+    assert not (tmp_path / "x").exists()
+
+
+def test_clear_stays_inside_the_repo(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit, match="_site"):
+        build_site.clear(tmp_path / "_site")
+    with pytest.raises(SystemExit, match="_site"):
+        build_site.clear(ROOT / "docs")
+
+
+def test_main_fails_on_a_bad_sri(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "repo"
+    (root / "site").mkdir(parents=True)
+    (root / "site" / "index.html").write_text("x", "utf-8")
+    tar = tmp_path / "core.tar.bz2"
+    make_tar(tar, good_members())
+    monkeypatch.setattr(build_site, "ROOT", root)
+    monkeypatch.setattr(build_site, "fetch_tarball", lambda cache: tar)
+    monkeypatch.setattr(build_site, "build_wheel", lambda target, out: "x.whl")
+    with pytest.raises(SystemExit, match="sha384"):
+        build_site.main(["--cache", str(tmp_path / "cache")])
+    assert not (root / "_site" / "pyodide" / "pyodide.js").exists()
