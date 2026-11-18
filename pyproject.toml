@@ -19,7 +19,7 @@ dev = [
     "hypothesis",
     "ruff",
     "mypy",
-    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@v0.1.2",
+    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@47a763a79681805e7dcb992c7d47e5166a83aa09",
 ]
 
 [project.scripts]
