@@ -12,4 +12,4 @@ The eval and dev extras in pyproject.toml point at synthbiz by commit SHA (e60de
 
 ## Consequences
 
-CI fails if measured.json, the examples or the README numbers no longer match the pinned data. The pin is a direct reference, so pyproject.toml sets allow-direct-references for the build. The README names the pinned commit where it describes the typo limit.
+CI fails if measured.json, the examples or the README numbers no longer match the pinned data. The pin is a direct reference, so pyproject.toml sets allow-direct-references for the build. The README names the pinned commit in the first bullet of How to read the numbers.

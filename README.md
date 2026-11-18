@@ -97,7 +97,8 @@ The first form scores one labeled folder. The second generates each seed in memo
 
 ## How to read the numbers
 
-- The data comes from synthbiz 0.2.0 at commit e60de623bba11135dac1794a8e883bcc9b02face, the commit pinned in pyproject.toml. It adds legitimate background rows that labels.csv does not list. A rule that flags one of them gets a false positive. These rows are legitimate by design, so the false alarms are real for these rules on this data. The precision shown is on synthetic data, not on real books.
+- The data comes from synthbiz 0.2.0 at commit e60de623bba11135dac1794a8e883bcc9b02face, the commit pinned in pyproject.toml. It adds legitimate background rows that labels.csv does not list. The synthbiz README.txt in the data folder says the background rows are legitimate and not listed in labels.csv, and manifest.json counts them. Every flag on one of them counts as a false alarm for that rule. The precision shown is on synthetic data, not on real books.
+- With synthbiz 0.1.x most rules showed a precision of 1.0, because the data had no ordinary rows for those rules to hit. That 1.0 did not show the false alarms a rule raises on ordinary entries. The lower precision here is the number to read.
 - Which background rows each rule flags:
   - weekend_posting: system batch entries on weekends and the quarter-end weekend close entries made by a person.
   - holiday_posting: system batch entries on US federal holidays.
@@ -105,22 +106,23 @@ The first form scores one labeled folder. The second generates each seed in memo
   - period_mismatch: close-window accruals posted on business days 1 to 3 with the previous period.
   - round_amount: the round monthly rent accrual and the entries made from the round monthly retainer invoice.
   - rare_poster: the CFO and the tax accountant, who post rarely.
-  - duplicate_fuzzy: the weekly freight invoices, whose invoice numbers are one character apart.
-  - duplicate_exact and split_under_limit: no background row. duplicate_exact is the only rule left with a precision of 1.0, because no background row repeats an invoice or a vendor, invoice number and amount. split_under_limit still has false alarms on ordinary invoices.
+  - duplicate_fuzzy: the weekly freight invoices, whose invoice numbers are one apart.
+  - duplicate_exact: none. No background row repeats a vendor, invoice number and amount, so it has no false positives and is the only rule at a precision of 1.0.
+  - split_under_limit: none. No background kind targets it. Its false positives are ordinary invoices: two invoices from one vendor inside the split window, each in the band under the approval limit and together over it. I checked this on seeds 101 to 105. It had false positives on synthbiz 0.1.x too.
 - A zero-width interval means every report seed scored the same. It is not high certainty.
 - rare_poster at its default rare_share and duplicate_fuzzy at its default thresholds miss some planted rows. The tuned rows use the settings picked on the tuning seeds. Both are in the numbers block.
-- Typo duplicates: synthbiz plants them (typo_duplicate_payment, an invoice number with one deletion, duplication or adjacent swap). duplicate_fuzzy scores against them and near_duplicate_payment together. The numbers block shows the recall on typo duplicates at the run defaults and the recall of duplicate_fuzzy at the tuned invoice_threshold, which is higher and has a lower precision.
+- Typo duplicates: synthbiz plants them (typo_duplicate_payment, an invoice number with one deletion, duplication or adjacent swap). duplicate_fuzzy scores against them and near_duplicate_payment together. The numbers block shows the recall on typo duplicates at the run defaults and the recall of duplicate_fuzzy at the tuned invoice_threshold, which is higher. It flags more payments, and its precision is a little higher too, see the tuned rows.
 - "Caught by any scored rule" (shown in the evaluation report) counts a labeled unit as caught when a flag from any of the nine scored rules lands on it. entry_number_gap and benford_first_digit are not scored.
 - Label types that no rule scores are never an error. A folder score lists them with their counts.
 
-A clean ledger is no longer empty. To see what the rules flag when nothing is planted (synthbiz with a planted rate of 0), run these two commands, then open /tmp/clean_ledger_out/analysis.md and read the "Items to check per rule" table.
+A clean ledger is no longer empty. To see what the rules flag when nothing is planted (synthbiz with seed 42, size small, 12 months, rate 0 and the other defaults), run these two commands, then open /tmp/clean_ledger_out/analysis.md and read the "Items to check per rule" table.
 
 ```
 synthbiz generate --anomaly-rate 0 --out /tmp/clean_ledger
 ledgercheck run /tmp/clean_ledger --out /tmp/clean_ledger_out
 ```
 
-That run still holds the background rows, so many rules show items. They are the rows listed above: weekend and holiday system entries, entries with no approver, close-window accruals, round rent and retainer entries, rare posters and freight invoices. split_under_limit and a few round_amount items come from ordinary rows. The numbers block has the counts.
+That run still holds the background rows, so many rules show items. They are the rows listed above: weekend and holiday system entries, entries with no approver, close-window accruals, round rent and retainer entries, rare posters and freight invoices. split_under_limit items and one round_amount item (the opening entry) come from ordinary rows. items_to_check.csv lists every item, and the numbers block has the counts.
 
 ## Numbers
 
@@ -212,13 +214,13 @@ examples/ holds synthbiz seed 42, size small, 12 months, and the analysis of it.
 
 ## Benchmark summary
 
-After `pip install -e ".[eval]"`, `python benchmarks/bench.py` times exact-key matching, all-pairs fuzzy matching and the blocked fuzzy search on synthetic data (synthbiz, seed 42, size large). The benchmark tables in the numbers block show the compare counts, times and near duplicate precision and recall for 12 and 36 months. Blocked fuzzy compares far fewer pairs than all-pairs and finds the same planted near and typo duplicates on this data, at the run defaults. Exact-key matching finds none of them. Both fuzzy methods have a low precision here, because the weekly freight invoices look like duplicates, and all-pairs also matches pairs with a different amount or outside the date window. This is synthetic data, not real books. The full tables and the machine details are in docs/benchmark.md. Times are from one machine and will differ on yours. Add `--quick` for a small 3 month run with one repeat.
+After `pip install -e ".[eval]"`, `python benchmarks/bench.py` times exact-key matching, all-pairs fuzzy matching and the blocked fuzzy search on synthetic data (synthbiz, seed 42, size large). The benchmark tables in the numbers block show the compare counts, times and near duplicate precision and recall for 12 and 36 months. Blocked fuzzy compares far fewer pairs than all-pairs and finds the same planted near and typo duplicates on this data, at the run defaults. Exact-key matching finds none of them. Both fuzzy methods have a low precision here, partly because of legitimate weekly freight invoices with invoice numbers one apart, which synthbiz does not label. All-pairs also matches pairs with a different amount or outside the date window. This is synthetic data, not real books. The full tables and the machine details are in docs/benchmark.md. Times are from one machine and will differ on yours. Add `--quick` for a small 3 month run with one repeat.
 
 ## Limits
 
 - Measurements on synthetic data do not predict results on real books. Rates on real books will differ.
-- Blocked fuzzy duplicate search compares only payments with the same amount, so a near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 91 different-amount pairs, and none of them was planted. docs/benchmark.md shows 263 near duplicate false positives for that run. They also include pairs outside the date window and legitimate background rows. The numbers block lists the pair count for both sizes. The reason for blocking is speed, see docs/adr/0004-fuzzy-duplicates-are-blocked.md.
-- duplicate_fuzzy finds a typo duplicate only when the amount is the same and the invoice numbers are similar enough. At the run defaults it flags part of the planted typo duplicates, see the numbers block. A lower invoice_threshold finds more and raises false alarms.
+- Blocked fuzzy duplicate search compares only payments with the same amount, so a near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 91 different-amount pairs, and none of them was planted. synthbiz plants near and typo duplicates with the amount of the original payment (`_near_duplicate` and `_typo_duplicate` in src/synthbiz/anomalies.py), and tests/test_evaluate_seeds.py checks this on labels. docs/benchmark.md shows 263 near duplicate false positives for that run. They also include pairs outside the date window and legitimate background rows. The numbers block lists the pair count for both sizes. The reason for blocking is speed, see docs/adr/0004-fuzzy-duplicates-are-blocked.md.
+- duplicate_fuzzy finds a typo duplicate only when the amount is the same and the invoice numbers are similar enough. At the run defaults it flags part of the planted typo duplicates, see the numbers block. A lower invoice_threshold finds more and flags more payments, see the tuned rows.
 - The holiday calendar is US federal holidays only, computed by rule. You can add dates in the settings file.
 - Input is CSV only. Parquet, Excel and direct ERP or bank connections are not supported.
 - Input caps: 3,000,000 rows per file, 5,000,000 rows in the folder, 500,000,000 bytes per file, 1,000,000,000 bytes in the folder, 128 characters in a field and 256 characters in a vendor name. A file over a cap is refused with a clear message.

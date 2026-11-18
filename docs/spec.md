@@ -27,7 +27,7 @@ Input is a synthbiz output folder in CSV. Another export is mapped to the same c
 | period_mismatch | period differs from the posting_date month | out_of_period_entry | entry |
 | split_under_limit | 2 or more invoices, one vendor, within N days, each in a band just under the approval limit, together at or over it | split_invoice | invoice group |
 | duplicate_exact | same invoice_id paid twice, or same vendor_id, invoice_number and amount | exact_duplicate_payment | later payment |
-| duplicate_fuzzy | pairs not found by duplicate_exact: same amount within N days, similar vendor name and invoice number | near_duplicate_payment | later payment |
+| duplicate_fuzzy | pairs not found by duplicate_exact: same amount within N days, similar vendor name and invoice number | near_duplicate_payment, typo_duplicate_payment | later payment |
 | entry_number_gap | missing numbers in the je_id sequence | none, not scored | entry |
 | benford_first_digit | first digit test on one amount field | none, not scored | field |
 
