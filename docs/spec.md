@@ -1,12 +1,12 @@
 # ledgercheck spec (v0.1, with the v0.2 plan)
 
 ## Problem
-Small finance teams want to check their own books before a close or before outside accountants start: journal entries posted on weekends, on holidays, by rare users or to the wrong period, invoices split under an approval limit, and vendor invoices paid twice. Journal entry testing is named in PCAOB AS 2401 and AICPA AU-C 240, so the tests themselves are well known. A list of flags is hard to act on without knowing how often each rule is right, and uploading client files to an outside service adds a confidentiality question.
+The target user is a small finance team that wants to check its own books before a close or before outside accountants start: journal entries posted on weekends, on holidays, by rare users or to the wrong period, invoices split under an approval limit, and vendor invoices paid twice. Journal entry testing is named in PCAOB AS 2401 and AICPA AU-C 240, so the tests themselves are well known. A list of flags is hard to act on without knowing how often each rule is right, and uploading client files to an outside service adds a confidentiality question.
 ledgercheck runs these tests on the user's machine or in a static browser page, and every rule ships with precision and recall measured against the labeled anomalies in synthbiz data, with confidence intervals. The scripts and seeds are in the repo, so a reader can rerun every number.
 
 ## Buyer
-- Small accounting and bookkeeping firms (about 1 to 20 staff) doing clean-up, month-end close or pre-checks for clients.
-- Controllers, AP managers and internal controls teams at companies of about 50 to 500 staff with no analytics tool, checking their own data first. Not large firms that already own enterprise analytics tools.
+- Small accounting and bookkeeping firms doing clean-up, month-end close or pre-checks for clients.
+- Controllers, AP managers and internal controls teams at mid-sized companies with no analytics tool, checking their own data first. Not large firms that already own enterprise analytics tools.
 - Instructors and students in accounting analytics, who can see each rule's hits and misses on synthbiz data.
 - Money path: a paid commercial license per firm, paid setup (column maps and settings for one firm's exports) and paid support.
 
@@ -31,14 +31,14 @@ Input is a synthbiz output folder in CSV. Another export is mapped to the same c
 | entry_number_gap | missing numbers in the je_id sequence | none, not scored | entry |
 | benford_first_digit | first digit test on one amount field | none, not scored | field |
 
-- Every flag is an item to check with a plain reason, for example "Posted on Saturday 2025-03-08". No rule reads labels, memo or any synthbiz id or role name. The approval limit is a setting; synthetic mode uses synthbiz's 500,000 cents.
-- Benford results carry a status that is printed before the numbers: weak_sample under 5,000 values, not_applicable for id-like or sequential fields (je_id, check numbers), ok otherwise. Mean absolute deviation with Nigrini's first-digit cutoffs, plus chi-square with a note that it rejects almost any large sample.
+- Every flag is an item to check with a plain reason, for example "Posted on Saturday 2025-03-08" (synthetic data). No rule reads labels, memo or any synthbiz id or role name. The approval limit is a setting; synthetic mode uses synthbiz's 500,000 cents.
+- Benford results carry a status that is printed before the numbers: weak_sample under 5,000 values, not_applicable for id-like or sequential fields (je_id, check numbers), ok otherwise. Mean absolute deviation with the first-digit cutoffs in Nigrini (2012), Benford's Law: Applications for Forensic Accounting, Auditing, and Fraud Detection, plus chi-square with a note that it rejects almost any large sample.
 
 Evaluation harness, the core difference:
 - Per rule and per anomaly type: true positives, false positives, misses, precision, recall, F1, and recall by any rule. A journal label points to the first line of an entry, so it maps to that line's je_id. Duplicates score on the later payment, which is the one synthbiz labels. A split group is a hit when it holds the labeled invoice. Flags on units labeled with another type are counted apart, not as false positives.
 - Cost-weighted score: misses times a per-type miss cost plus flags times a check cost, shown next to two baselines, flag nothing and flag everything. Costs are a JSON input; the shipped defaults are placeholders and every report prints them.
 - Seeds are generated in memory with synthbiz.generate. Thresholds (for example the fuzzy cutoff) are set to the lowest expected cost on the tuning seeds and reported on separate seeds. 95 percent intervals come from a percentile bootstrap over seeds (2,000 draws, fixed RNG seed), since rows inside one seed are not independent. Precision depends on the planted rate, so the report prints it.
-- Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The README says so.
+- Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The README must state this limit.
 - Output folder: items_to_check.csv, analysis.md, analysis.html (counts per rule, Benford table and status, measured rates labeled "measured on synthetic data") and a README.txt with the notice and disclaimer.
 
 ## Design
@@ -80,7 +80,7 @@ Benchmark: benchmarks/bench.py on synthbiz size large, 12 and 36 months, seed 42
 - scripts/reproduce_readme.py regenerates every number in the README. CI: ruff, mypy --strict, pytest, at least 90 percent line coverage on the core package; the browser test runs in its own job.
 
 ## License
-- All rights reserved, see LICENSE. README, output README.txt, analysis files and examples carry: "All rights reserved. You may view the code and run it to evaluate it. Commercial use needs a paid license from Mehmet Tuzunkan: https://www.linkedin.com/in/mstuzunkan". CSV files keep a plain header row. Package metadata: license = "LicenseRef-Proprietary", license-files = ["LICENSE"].
+- All rights reserved, see LICENSE. README, output README.txt, analysis files and examples carry: "All rights reserved. You may view the code and run it to evaluate it. Commercial use needs a paid license from Mehmet Tuzunkan: https://www.linkedin.com/in/mstuzunkan". CSV files keep a plain header row, so the notice sits in README.txt in the same folder as each CSV file. Package metadata: license = "LicenseRef-Proprietary", license-files = ["LICENSE"].
 - Third-party parts (Pyodide, hypothesis, pytest and others) keep their own licenses, listed in THIRD_PARTY_NOTICES.md. The holiday calendar is computed by rule in code written for this repo, and so is the legal suffix list for name matching. Any outside list added later is recorded in DATA.md with its license.
 
 ## Liability notes
