@@ -73,9 +73,9 @@ class DuplicateSettings:
     max_cell_steps: 400,000,000. The fuzzy search stops with an error when its
         work passes this. Work is counted in Levenshtein cell steps: each
         compare costs 16 for call overhead, plus len(a) x len(b) when the
-        edit distance really runs. The default was chosen from one timing run
-        on one Mac, so the stop time on other machines is not known.
-        benchmarks/ will hold the script that measures it. A user may raise
+        edit distance really runs. The time this default allows is not
+        measured in this repo yet. benchmarks/ will hold the script that
+        measures it. A user may raise
         max_cell_steps, up to 10**15, at the cost of a longer run.
     """
 
