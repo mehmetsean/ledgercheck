@@ -24,7 +24,7 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _run(args: argparse.Namespace) -> None:
-    check_out_folder(args.out, args.data)
+    check_out_folder(args.out, args.data, args.force)
     cmap = load_column_map(args.column_map) if args.column_map else None
     settings = load_settings(args.settings) if args.settings else Settings()
     ledger = read_folder(args.data, cmap)

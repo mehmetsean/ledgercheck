@@ -93,6 +93,7 @@ def _input_lines(result: AnalysisResult) -> list[str]:
             "journal entry ids with no trailing digits, skipped by "
             f"entry_number_gap: {result.unnumbered_ids}"
         )
+        out.append(f"journal entry ids that share a number: {result.shared_numbers}")
     return out
 
 
@@ -199,20 +200,10 @@ def page(result: AnalysisResult) -> str:
     )
 
 
-def check_out_folder(out: Path, data: Path) -> None:
-    """Refuse an output folder that is the data folder or inside it."""
-    out_path, data_path = out.resolve(), data.resolve()
-    if out_path == data_path or data_path in out_path.parents:
-        raise ValueError(
-            f"{ascii(str(out))}: output folder must not be inside the data"
-        )
-
-
-def _prepare(out: Path, force: bool) -> None:
+def _check_existing(out: Path, force: bool) -> None:
     if out.exists() and not out.is_dir():
         raise ValueError(f"{ascii(str(out))} is a file, not a folder")
-    out.mkdir(parents=True, exist_ok=True)
-    names = sorted(p.name for p in out.iterdir())
+    names = sorted(p.name for p in out.iterdir()) if out.is_dir() else []
     if not names:
         return
     if not force:
@@ -225,6 +216,21 @@ def _prepare(out: Path, force: bool) -> None:
             f"{ascii(str(out))} holds files that are not ledgercheck output, "
             f"first one {ascii(other[0][:40])}. Use an empty folder"
         )
+
+
+def check_out_folder(out: Path, data: Path, force: bool = False) -> None:
+    """Refuse a bad output folder before any data is read."""
+    out_path, data_path = out.resolve(), data.resolve()
+    if out_path == data_path or data_path in out_path.parents:
+        raise ValueError(
+            f"{ascii(str(out))}: output folder must not be inside the data"
+        )
+    _check_existing(out, force)
+
+
+def _prepare(out: Path, force: bool) -> None:
+    _check_existing(out, force)
+    out.mkdir(parents=True, exist_ok=True)
 
 
 def _write(out: Path, name: str, text: str) -> None:

@@ -339,3 +339,21 @@ def test_odd_path_is_printed_as_ascii(
     err = capsys.readouterr().err
     assert code == 2
     assert "\x1b" not in err
+
+
+def test_output_folder_is_checked_before_data_is_read(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "journal_lines.csv").write_text("")
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "notes.txt").write_text("mine")
+    assert main(["run", str(data), "--out", str(out), "--force"]) == 2
+    assert "not ledgercheck output" in capsys.readouterr().err
+    assert main(["run", str(data), "--out", str(out)]) == 2
+    assert "is not empty" in capsys.readouterr().err
+    (out / "notes.txt").unlink()
+    assert main(["run", str(data), "--out", str(out)]) == 2
+    assert "file is empty" in capsys.readouterr().err

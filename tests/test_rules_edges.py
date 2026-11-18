@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from helpers import invoice, ledger, line
+from ledgercheck import report
 from ledgercheck.analyze import analyze
 from ledgercheck.models import Flag, Settings
 from ledgercheck.rules import natural_key, run_rules
@@ -111,3 +112,12 @@ def test_report_counts_ids_without_digits() -> None:
     lines = [line(je="alpha"), line(je="beta"), line(je="JE-1")]
     result = analyze(ledger(lines=lines), S)
     assert result.unnumbered_ids == 2
+
+
+def test_ids_that_share_a_number_are_counted() -> None:
+    lines = [line(je="JE-1"), line(je="JE-001"), line(je="JE-3"), line(je="alpha")]
+    result = analyze(ledger(lines=lines), S)
+    assert result.shared_numbers == 1
+    assert result.unnumbered_ids == 1
+    text = report.markdown(result)
+    assert "ids that share a number: 1" in text

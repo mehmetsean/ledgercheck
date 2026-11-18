@@ -7,6 +7,7 @@ from hypothesis import strategies as st
 
 from helpers import invoice, ledger, payment
 from ledgercheck.duplicates import (
+    _Meter,
     find_duplicates,
     fuzzy_pairs_all,
     levenshtein,
@@ -276,3 +277,43 @@ def test_shuffling_rows_changes_no_flag(led: Ledger, seed: int) -> None:
     a = find_duplicates(led, D)
     b = find_duplicates(other, D)
     assert a.flags == b.flags
+
+
+def fuzzy_flags(
+    names: tuple[str, str], numbers: tuple[str, str], cfg: DuplicateSettings
+):  # type: ignore[no-untyped-def]
+    vend = [Vendor("V1", names[0]), Vendor("V2", names[1])]
+    inv = [
+        invoice("I1", "V1", numbers[0], DAY, 5000),
+        invoice("I2", "V2", numbers[1], DAY, 5000),
+    ]
+    pay = [payment("P1", "V1", "I1", DAY, 5000), payment("P2", "V2", "I2", DAY, 5000)]
+    return find_duplicates(ledger(invoices=inv, payments=pay, vendors=vend), cfg).flags
+
+
+def test_length_bound_equal_to_threshold_still_matches() -> None:
+    cfg = DuplicateSettings(name_threshold=0.8, invoice_threshold=0.0)
+    found = fuzzy_flags(("abcd", "abcde"), ("N1", "N1"), cfg)
+    assert [f.rule for f in found] == ["duplicate_fuzzy"]
+    short = DuplicateSettings(name_threshold=0.81, invoice_threshold=0.0)
+    assert fuzzy_flags(("abcd", "abcde"), ("N1", "N1"), short) == []
+
+
+def test_blank_invoice_number_with_zero_threshold_matches_on_name() -> None:
+    cfg = DuplicateSettings(invoice_threshold=0.0)
+    found = fuzzy_flags(("Cedar Co", "Cedar Inc"), ("", ""), cfg)
+    assert [f.rule for f in found] == ["duplicate_fuzzy"]
+    assert fuzzy_flags(("Cedar Co", "Cedar Inc"), ("", ""), D) == []
+
+
+def test_invoice_numbers_are_compared_after_normalizing() -> None:
+    found = fuzzy_flags(("Cedar Co", "Cedar Inc"), ("INV-100", "inv 100"), D)
+    assert [f.rule for f in found] == ["duplicate_fuzzy"]
+    assert "invoice number similarity 1.00" in found[0].reason
+
+
+def test_meter_stops_only_above_the_limit() -> None:
+    meter = _Meter(10, 7)
+    meter.add(10)
+    with pytest.raises(ValueError, match="stopped after 10 cell steps"):
+        meter.add(1)
