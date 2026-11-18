@@ -26,7 +26,7 @@ The first form scores one labeled folder. The second generates each seed in memo
 
 ### How to read the numbers
 
-- Recall and precision of 1.0 for weekend_posting, holiday_posting, no_approver, period_mismatch, duplicate_exact and duplicate_fuzzy come from how synthbiz plants anomalies, not from accuracy on real books. synthbiz's clean ledger has no weekend, holiday, unapproved or odd-period entries, and its near duplicates keep the amount and the invoice number. These numbers show that the rules match how synthbiz plants anomalies. They do not show how well the rules work on real books.
+- Recall and precision of 1.0 for weekend_posting, holiday_posting, no_approver, period_mismatch, duplicate_exact and duplicate_fuzzy come from how synthbiz plants anomalies, not from accuracy on real books. synthbiz's clean ledger has no weekend, holiday, unapproved or odd-period entries, and its near duplicates keep the amount and the invoice number. These numbers show that the rules match how synthbiz plants anomalies.
 - A zero-width interval means every report seed scored the same. It is not high certainty.
 - Round_amount and split_under_limit show false alarms on synthbiz. The clean-ledger commands below show a few (1 and 2 items with the default seed).
 - On the shipped large run, rare_poster at the default rare_share (0.05) has recall 0.2402, so it misses most planted anomalies. The tuned row uses a higher rare_share (0.1).
@@ -43,6 +43,10 @@ ledgercheck run /tmp/clean_ledger --out /tmp/clean_ledger_out
 Then open /tmp/clean_ledger_out/analysis.md and read the "Items to check per rule" table.
 
 To rebuild or check the shipped rates: `python scripts/make_measured.py` and `python scripts/make_measured.py --check`.
+
+## Benchmark
+
+`python benchmarks/bench.py` times exact-key matching, all-pairs fuzzy matching and the blocked fuzzy search on synthbiz data (seed 42, size large). On 12 months (1,288 payments) all-pairs fuzzy takes about 12.6 s and 828,828 pair compares, blocked fuzzy 0.003 s and 59 compares, with the same recall (1.0) for exact and near duplicates and precision 1.0 for blocked against 0.81 for all-pairs. The full tables, the 36 month case and the machine details are in docs/benchmark.md. Add `--quick` for a small run that only checks the results.
 
 Work in progress. The plan is in docs/spec.md.
 
