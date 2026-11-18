@@ -1,4 +1,5 @@
 import json
+import random
 from datetime import date
 from pathlib import Path
 
@@ -196,17 +197,17 @@ def test_bootstrap_with_no_defined_value_is_none():
 
 
 def test_parse_seeds():
-    assert ev.parse_seeds("1-3", "x") == (1, 2, 3)
-    assert ev.parse_seeds("5,1-2", "x") == (5, 1, 2)
-    assert len(ev.parse_seeds("1-1000", "x")) == 1000
+    assert ev.parse_seeds("1-3", "x", 10) == (1, 2, 3)
+    assert ev.parse_seeds("5,1-2", "x", 10) == (5, 1, 2)
+    assert len(ev.parse_seeds("1-50", "x", 50)) == 50
 
 
 @pytest.mark.parametrize(
-    "text", ["", "a", "3-1", "1-1001", "1,1", "-5", "1-2-3", "1,,2", "9999999999"]
+    "text", ["", "a", "3-1", "1-51", "1,1", "-5", "1-2-3", "1,,2", "9999999999"]
 )
 def test_parse_seeds_errors(text):
     with pytest.raises(ValueError):
-        ev.parse_seeds(text, "seeds")
+        ev.parse_seeds(text, "seeds", 50)
 
 
 def test_load_costs(tmp_path: Path):
@@ -271,3 +272,88 @@ def test_read_manifest_info(tmp_path: Path):
     path.write_text("{}")
     with pytest.raises(ValueError, match="manifest"):
         ev.read_manifest_info(tmp_path)
+
+
+def test_label_for_a_ledger_with_no_journal_table_is_ignored():
+    lab = [label("journal_lines", "L1", "weekend_posting")]
+    s = ev.score([], lab, ledger(invoices=[]), COSTS)
+    assert set(s.rules) == {"split_under_limit"}
+
+
+def test_lookup_is_built_once_per_score(monkeypatch: pytest.MonkeyPatch):
+    calls = []
+    real = ev._lookup
+    monkeypatch.setattr(ev, "_lookup", lambda led: calls.append(1) or real(led))
+    lab = [label("journal_lines", f"L{n}", "weekend_posting") for n in (1, 3, 4)]
+    ev.score([], lab, two_line_ledger(), COSTS)
+    assert len(calls) == 1
+
+
+def test_bootstrap_percentile_indexes_on_a_small_draw_set():
+    per_seed = [(1, 0, 0), (10, 0, 0), (100, 0, 0)]
+    draws, seed = 40, 1
+    rng = random.Random(seed)
+    sums = sorted(
+        sum(per_seed[rng.randrange(3)][0] for _ in range(3)) for _ in range(draws)
+    )
+    assert sums[0] != sums[1] and sums[38] != sums[39]
+    got = ev.bootstrap(per_seed, lambda tp, fp, m: float(tp), draws=draws, seed=seed)
+    assert got == (sums[0], sums[38])
+
+
+def test_each_draw_resamples_exactly_n_seeds():
+    per_seed = [(1, 0, 0)] * 5
+    got = ev.bootstrap(per_seed, lambda tp, fp, m: float(tp), draws=30)
+    assert got == (5.0, 5.0)
+
+
+def test_ties_go_to_the_run_default():
+    from synthbiz.generate import Params
+
+    seeds = [ev.make_seed(1, ev.EvalParams("small", 2, 0.3))]
+    zero = ev.CostTable(0.0, dict.fromkeys(COSTS.miss_cost, 0.0))
+    grid = ev.Grid((0.6, 0.9), (0.6, 0.9), (0.02, 0.1))
+    chosen, _ = ev.tune(seeds, zero, grid)
+    assert chosen.duplicates.name_threshold == 0.8
+    assert chosen.duplicates.invoice_threshold == 0.8
+    assert chosen.rare_share == 0.05
+    assert Params().anomaly_rate == ev.DEFAULT_RATE
+
+
+def test_labels_symlink_is_refused(tmp_path: Path):
+    real = tmp_path / "real.csv"
+    real.write_text("table,row_id,anomaly_type,details\n")
+    (tmp_path / "labels.csv").symlink_to(real)
+    with pytest.raises(ValueError, match="symbolic link"):
+        ev.read_labels(tmp_path)
+
+
+def test_big_labels_and_manifest_files_are_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    (tmp_path / "labels.csv").write_text("table,row_id,anomaly_type,details\n")
+    (tmp_path / "manifest.json").write_text("{}" + " " * 50)
+    monkeypatch.setattr(ev, "MAX_FILE_BYTES", 10)
+    monkeypatch.setattr(ev, "MAX_MANIFEST_BYTES", 10)
+    with pytest.raises(ValueError, match="larger than"):
+        ev.read_labels(tmp_path)
+    with pytest.raises(ValueError, match="larger than"):
+        ev.read_manifest_info(tmp_path)
+
+
+def test_manifest_symlink_is_refused(tmp_path: Path):
+    real = tmp_path / "real.json"
+    real.write_text("{}")
+    (tmp_path / "manifest.json").symlink_to(real)
+    with pytest.raises(ValueError, match="symbolic link"):
+        ev.read_manifest_info(tmp_path)
+
+
+def test_check_work_limits():
+    ev.check_work(range(50), range(200), 24)
+    with pytest.raises(ValueError, match="--tune-seeds"):
+        ev.check_work(range(51), [1], 1)
+    with pytest.raises(ValueError, match="--seeds"):
+        ev.check_work([1], range(201), 1)
+    with pytest.raises(ValueError, match="seeds times months"):
+        ev.check_work(range(50), range(200), 25)

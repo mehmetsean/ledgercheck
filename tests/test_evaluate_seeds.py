@@ -1,18 +1,22 @@
 import ast
 import importlib.util
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
 from synthbiz.generate import Params, generate
 from synthbiz.io import write_dataset
 
+from helpers import ledger, line
 from ledgercheck import cli
 from ledgercheck import evaluate as ev
-from ledgercheck.eval_report import metrics_dict, metrics_text
+from ledgercheck.eval_report import folder_text, markdown, metrics_dict, metrics_text
 from ledgercheck.io import read_folder
 from ledgercheck.measured import FUZZY_LIMIT, load_measured
+from ledgercheck.report import DISCLAIMER, NOTICE
 
+SAT = date(2025, 3, 8)
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src" / "ledgercheck"
 GOLDEN = Path(__file__).parent / "golden" / "metrics_small.json"
@@ -121,6 +125,7 @@ def test_cli_folder_mode(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
         "weekend_posting" in out and "placeholders" in out and "Decision support" in out
     )
     assert "planted rate 0.3" in out
+    assert NOTICE in out and DISCLAIMER in out
 
 
 def test_cli_seed_mode_writes_the_files(
@@ -131,6 +136,7 @@ def test_cli_seed_mode_writes_the_files(
     args += ["--seeds", "10-12", "--rate", "0.2", "--out", str(out_dir)]
     code, out, _ = run_cli(args, capsys)
     assert code == 0 and "Settings chosen" in out
+    assert NOTICE in out and DISCLAIMER in out
     names = sorted(p.name for p in out_dir.iterdir())
     assert names == ["README.txt", "evaluation.html", "evaluation.md", "metrics.json"]
     md = (out_dir / "evaluation.md").read_text("utf-8")
@@ -162,14 +168,21 @@ def test_cli_custom_costs_are_printed(
     args = ["evaluate", "--months", "2", "--tune-seeds", "1", "--seeds", "2-3"]
     args += ["--costs", str(costs), "--out", str(tmp_path / "o")]
     assert run_cli(args, capsys)[0] == 0
-    assert "Check cost 7.0" in (tmp_path / "o" / "evaluation.md").read_text("utf-8")
+    md = (tmp_path / "o" / "evaluation.md").read_text("utf-8")
+    assert "Costs used: check cost 7.0" in md
+    assert f"--costs {costs}" in md
+    doc = json.loads((tmp_path / "o" / "metrics.json").read_text("utf-8"))
+    assert doc["costs"]["check_cost"] == 7.0
+    assert doc["command"].endswith(f"--costs {costs}")
 
 
 @pytest.mark.parametrize(
     "args, message",
     [
         (["--out", "X", "--seeds", "5-1"], "backwards"),
-        (["--out", "X", "--seeds", "1-1001"], "at most 1000"),
+        (["--out", "X", "--seeds", "1-201"], "at most 200"),
+        (["--out", "X", "--tune-seeds", "1-51"], "at most 50"),
+        (["--out", "X", "--months", "200"], "seeds times months"),
         (["--out", "X", "--tune-seeds", "abc"], "--tune-seeds"),
         (["--out", "X", "--tune-seeds", "1-5", "--seeds", "5-9"], "share a seed"),
         (["--out", "X", "--months", "0"], "--months"),
@@ -244,6 +257,8 @@ def test_run_output_shows_the_shipped_measured_rates(
         assert "Report seeds 101-130" in text
         assert "duplicate_fuzzy" in text
     assert "the measured rates are shown" in md
+    assert "Run defaults" in md and "do not predict" in md
+    assert "A 1.0000 to 1.0000 interval means every report seed" in md
 
 
 def load_script():
@@ -285,6 +300,28 @@ def test_make_measured_passes_on_a_bad_option(tmp_path: Path):
         )
 
 
+def test_folder_text_cleans_and_caps_label_details(tmp_path: Path):
+    lines = [line("JE-1", SAT, line_id="L1")]
+    details = "x" * 200 + "\x1b[31m"
+    lab = [ev.Label("journal_lines", "L1", "weekend_posting", details)]
+    scores = ev.score([], lab, ledger(lines=lines), ev.DEFAULT_COSTS)
+    info = {"seed": "1", "size": "\x1b[2Jbig", "months": "3", "anomaly_rate": "0.1"}
+    text = folder_text(scores, 1, info, ev.DEFAULT_COSTS)
+    assert "\x1b" not in text
+    shown = [x for x in text.splitlines() if x.startswith("missed by")]
+    assert len(shown) == 1 and len(shown[0]) == len("missed by weekend_posting: ") + 80
+
+
+def test_evaluation_shows_defaults_and_tuned_rows():
+    doc = metrics_dict(small_report(), COMMAND)
+    md = markdown(doc)
+    assert "rare_poster (defaults)" in md
+    assert "rare_poster (tuned on seeds 1-2)" in md
+    assert "duplicate_fuzzy (tuned on seeds 1-2)" in md
+    assert "split_under_limit (tuned" not in md
+    assert doc["settings"]["defaults"]["rare_share"] == 0.05
+
+
 def test_shipped_measured_json_is_complete():
     doc = load_measured()
     assert doc is not None
@@ -310,6 +347,14 @@ def imports_of(path: Path) -> set[str]:
 def test_core_rules_never_import_evaluate(name: str):
     names = imports_of(SRC / f"{name}.py")
     assert not {n for n in names if "evaluate" in n or "eval_report" in n}
+    assert "importlib" not in names
+    tree = ast.parse((SRC / f"{name}.py").read_text("utf-8"))
+    called = {
+        n.func.id
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+    }
+    assert "__import__" not in called
 
 
 def strings_of(path: Path) -> list[str]:
