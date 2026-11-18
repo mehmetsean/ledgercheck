@@ -54,7 +54,6 @@ near_duplicate_payment and typo_duplicate_payment. The false positives come
 partly from legitimate background rows, such as weekly freight invoices with
 invoice numbers one apart, which synthbiz does not label. All-pairs also
 matches pairs with a different amount or outside the date window. See the
-README. Times are
-from one machine and will differ on yours. The cell steps columns in the tables
-above are counted by the same meter the shipped search uses, 16 per compare
-plus the edit distance cells.
+README. Times are from one machine and will differ on yours. The cell steps
+columns in the tables above are counted by the same meter the shipped search
+uses, 16 per compare plus the edit distance cells.

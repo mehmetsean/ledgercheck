@@ -108,7 +108,7 @@ The first form scores one labeled folder. The second generates each seed in memo
   - rare_poster: the CFO and the tax accountant, who post rarely.
   - duplicate_fuzzy: the weekly freight invoices, whose invoice numbers are one apart.
   - duplicate_exact: none. No background row repeats a vendor, invoice number and amount, so it has no false positives and is the only rule at a precision of 1.0.
-  - split_under_limit: none. No background kind targets it. Its false positives are ordinary invoices: two invoices from one vendor inside the split window, each in the band under the approval limit and together over it. I checked this on seeds 101 to 105. It had false positives on synthbiz 0.1.x too.
+  - split_under_limit: none. No background kind targets it. Its false positives are ordinary invoices: two invoices from one vendor inside the split window, each in the band under the approval limit and together over it. The clean ledger run below shows these items. The same kind of false positive was already in the 0.1.x numbers.
 - A zero-width interval means every report seed scored the same. It is not high certainty.
 - rare_poster at its default rare_share and duplicate_fuzzy at its default thresholds miss some planted rows. The tuned rows use the settings picked on the tuning seeds. Both are in the numbers block.
 - Typo duplicates: synthbiz plants them (typo_duplicate_payment, an invoice number with one deletion, duplication or adjacent swap). duplicate_fuzzy scores against them and near_duplicate_payment together. The numbers block shows the recall on typo duplicates at the run defaults and the recall of duplicate_fuzzy at the tuned invoice_threshold, which is higher. It flags more payments, and its precision is a little higher too, see the tuned rows.
@@ -158,7 +158,7 @@ rare_poster has recall 0.9295 at rare_share 0.05. Tuning kept rare_share 0.05, s
 
 duplicate_fuzzy at invoice_threshold 0.8 has recall 0.8547. At invoice_threshold 0.6 it has recall 1.0000.
 
-typo_duplicate_payment: 549 of 780 labeled payments are flagged by a scored rule at the run defaults, recall 0.7038 (95 percent interval 0.6744 to 0.7321). Only duplicate_exact and duplicate_fuzzy flag payments.
+typo_duplicate_payment: 549 of 780 labeled payments are flagged by a scored rule at the run defaults, recall 0.7038 (95 percent interval 0.6744 to 0.7321).
 
 ### Clean ledger
 
