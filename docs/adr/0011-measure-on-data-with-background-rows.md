@@ -12,6 +12,6 @@ ledgercheck pins synthbiz 0.2.0 and measures with the background rows on. Flags 
 
 ## Consequences
 
-Precision now shows false alarms on legitimate synthetic rows. The numbers are on synthetic data and do not predict real books. PRECISION_NOTE
+Precision now shows false alarms on legitimate synthetic rows. The numbers are on synthetic data and do not predict real books. Only duplicate_exact stays at a precision of 1.0, because no background row repeats an invoice or a vendor, invoice number and amount. Every other rule flags at least one kind of background row, so its precision drops. The numbers block in the README has the rates and the clean ledger counts. Tuning now keeps rare_share at its default and lowers invoice_threshold for duplicate_fuzzy, which finds every typo duplicate and raises false alarms.
 
 The cost of a miss for typo_duplicate_payment is a placeholder equal to near_duplicate_payment. The approval limit stays a fixed setting of 500,000 cents, the same value synthbiz writes to manifest.json.

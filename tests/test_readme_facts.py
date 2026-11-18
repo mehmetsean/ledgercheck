@@ -161,3 +161,20 @@ def test_examples_have_no_tax_id_pattern() -> None:
 def test_quick_run_text_matches_the_readme() -> None:
     assert "3 months" in bench.QUICK_LINE
     assert "3 month" in README
+
+
+def test_typo_recall_in_the_block_matches_measured_json() -> None:
+    import json
+
+    data = json.loads((ROOT / "src/ledgercheck/measured.json").read_text("utf-8"))
+    typo = data["any_rule"]["typo_duplicate_payment"]
+    assert f"recall {typo['recall']:.4f}" in README
+    assert typo["recall"] < 1.0
+
+
+def test_only_exact_duplicates_keep_a_precision_of_one() -> None:
+    import json
+
+    data = json.loads((ROOT / "src/ledgercheck/measured.json").read_text("utf-8"))
+    perfect = [k for k, r in data["rules"].items() if r["precision"] == 1.0]
+    assert perfect == ["duplicate_exact"]

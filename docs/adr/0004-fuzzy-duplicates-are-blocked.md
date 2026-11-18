@@ -4,7 +4,7 @@ Status: Accepted
 
 ## Context
 
-Exact-key matching is O(n) but misses a payment that was re-keyed under another vendor id, which is how synthbiz plants near duplicates (new vendor_id, same invoice number and amount). All-pairs fuzzy matching finds them but needs O(n^2) compares. In docs/benchmark.md, 4,132 payments need 8,534,646 compares and 126.177 s for one all-pairs run, against 176 compares and 0.009 s blocked.
+Exact-key matching is O(n) but misses a payment that was re-keyed under another vendor id, which is how synthbiz plants near duplicates (new vendor_id, same invoice number and amount). All-pairs fuzzy matching finds them but needs O(n^2) compares. In docs/benchmark.md, 4,439 payments need 9,850,141 compares and 146.359 s for one all-pairs run, against 526 compares and 0.016 s blocked.
 
 ## Decision
 
@@ -19,4 +19,4 @@ Options considered:
 
 ## Consequences
 
-A near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 87 different-amount pairs, and none was planted, so the benchmark cannot say how many of those are real. docs/benchmark.md shows 80 near duplicate false positives for the same run because it scores one flag per later payment, not one per pair. The README states this limit. An amount tolerance band is a possible later change. benchmarks/bench.py checks that blocking never loses a match that shares an amount and falls in the window, and exits non-zero when it does. CI runs a quick form of it.
+A near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 91 different-amount pairs, and none was planted, so the benchmark cannot say how many of those are real. docs/benchmark.md shows 263 near duplicate false positives for the same run. That count also holds pairs outside the date window and legitimate background rows, so it is not the same as the 91 pairs. The README states this limit. An amount tolerance band is a possible later change. benchmarks/bench.py checks that blocking never loses a match that shares an amount and falls in the window, and exits non-zero when it does. CI runs a quick form of it.

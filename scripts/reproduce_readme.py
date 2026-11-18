@@ -107,10 +107,32 @@ def measured_lines() -> list[str]:
     ]
     old = data["rules"]["rare_poster"]["recall"]
     new = data["tuned_rules"]["rare_poster"]["recall"]
+    share = s["defaults"]["rare_share"]
+    if s["tuned"]["rare_share"] == share:
+        lines.append(
+            f"rare_poster has recall {old:.4f} at rare_share {share}. "
+            f"Tuning kept rare_share {share}, so its tuned row equals its default row."
+        )
+    else:
+        lines.append(
+            f"rare_poster at rare_share {share} has recall {old:.4f}. "
+            f"At rare_share {s['tuned']['rare_share']} it has recall {new:.4f}."
+        )
+    lines.append("")
     lines.append(
-        f"rare_poster at rare_share {s['defaults']['rare_share']} has recall "
-        f"{old:.4f}. At rare_share {s['tuned']['rare_share']} it has recall "
-        f"{new:.4f}."
+        f"duplicate_fuzzy at invoice_threshold {s['defaults']['invoice_threshold']} "
+        f"has recall {data['rules']['duplicate_fuzzy']['recall']:.4f}. "
+        f"At invoice_threshold {s['tuned']['invoice_threshold']} it has recall "
+        f"{data['tuned_rules']['duplicate_fuzzy']['recall']:.4f}."
+    )
+    lines.append("")
+    typo = data["any_rule"]["typo_duplicate_payment"]
+    low, high = typo["recall_ci"]
+    lines.append(
+        f"typo_duplicate_payment: {typo['caught']} of {typo['labeled']} labeled "
+        f"payments are flagged by a scored rule at the run defaults, recall "
+        f"{typo['recall']:.4f} (95 percent interval {low:.4f} to {high:.4f}). "
+        "Only duplicate_exact and duplicate_fuzzy flag payments."
     )
     return lines
 
