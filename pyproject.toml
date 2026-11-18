@@ -14,7 +14,7 @@ dependencies = []
 
 [project.optional-dependencies]
 eval = [
-    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@47a763a79681805e7dcb992c7d47e5166a83aa09",
+    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@e60de623bba11135dac1794a8e883bcc9b02face",
 ]
 dev = [
     "pytest",
@@ -22,7 +22,7 @@ dev = [
     "hypothesis",
     "ruff",
     "mypy",
-    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@47a763a79681805e7dcb992c7d47e5166a83aa09",
+    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@e60de623bba11135dac1794a8e883bcc9b02face",
 ]
 
 [project.scripts]

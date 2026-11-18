@@ -10,3 +10,4 @@
 - [0008 synthbiz is pinned by commit SHA](0008-synthbiz-pinned-by-commit.md)
 - [0009 Benford is a status line, not a scored rule](0009-benford-is-a-status-line.md)
 - [0010 The planned demo serves Pyodide and the wheels from its own origin](0010-demo-serves-pyodide-from-the-pages-origin.md)
+- [0011 Measure on data with background rows](0011-measure-on-data-with-background-rows.md)

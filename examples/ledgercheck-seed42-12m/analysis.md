@@ -8,9 +8,9 @@ Every line is an item to check. It is not a finding of fraud or error. A rare_po
 
 ## Input
 
-- journal_lines: 1030 rows
-- ap_invoices: 149 rows
-- ap_payments: 126 rows
+- journal_lines: 1440 rows
+- ap_invoices: 217 rows
+- ap_payments: 185 rows
 - vendors: 9 rows
 - journal entry ids with no trailing digits, skipped by entry_number_gap: 0
 - journal entry ids that share a number: 0
@@ -19,18 +19,18 @@ Every line is an item to check. It is not a finding of fraud or error. A rare_po
 
 | Rule | Items | Note |
 | --- | --- | --- |
-| weekend_posting | 1 |  |
-| holiday_posting | 1 |  |
-| round_amount | 2 |  |
-| rare_poster | 0 |  |
-| no_approver | 0 |  |
-| period_mismatch | 0 |  |
-| split_under_limit | 3 |  |
+| weekend_posting | 17 |  |
+| holiday_posting | 11 |  |
+| round_amount | 37 |  |
+| rare_poster | 5 |  |
+| no_approver | 47 |  |
+| period_mismatch | 11 |  |
+| split_under_limit | 4 |  |
 | duplicate_exact | 1 |  |
-| duplicate_fuzzy | 1 |  |
+| duplicate_fuzzy | 43 |  |
 | entry_number_gap | 0 |  |
 
-duplicate_fuzzy search: k = 2 (most same-amount payments in one window), 2 pair compares.
+duplicate_fuzzy search: k = 3 (most same-amount payments in one window), 89 pair compares.
 
 ## Measured on synthetic data
 
@@ -44,7 +44,7 @@ Run defaults, used for the rows named after a rule: fuzzy name_threshold 0.8, in
 
 95 percent intervals come from a percentile bootstrap over seeds: 2000 draws, fixed RNG seed 20261117, seeds resampled with replacement, pooled precision, recall and F1 recomputed from summed counts.
 
-synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos.
+synthbiz plants near duplicates under a new vendor id, with the same invoice number and amount. It also plants typo duplicates, with a small change to the invoice number (one deletion, duplication or adjacent swap). duplicate_fuzzy scores both. The blocked search never finds a duplicate whose amount was changed.
 
 A 1.0000 to 1.0000 interval means every report seed scored 1.0000 on synthetic data. It is not a guarantee for real books.
 
@@ -52,64 +52,64 @@ Reproduce: ledgercheck evaluate --size large --months 12 --tune-seeds 1-10 --see
 
 | Rule | Anomaly type | Flags | Precision (95% interval) | Recall (95% interval) |
 | --- | --- | --- | --- | --- |
-| duplicate_exact | exact_duplicate_payment | 900 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
-| duplicate_fuzzy | near_duplicate_payment | 870 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
-| holiday_posting | holiday_posting | 870 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
-| no_approver | missing_approval | 870 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
-| period_mismatch | out_of_period_entry | 870 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
-| rare_poster | unusual_user | 209 | 1.0000 (1.0000 to 1.0000) | 0.2402 (0.1724 to 0.3080) |
-| round_amount | round_amount_entry | 900 | 0.9667 (0.9667 to 0.9667) | 1.0000 (1.0000 to 1.0000) |
-| split_under_limit | split_invoice | 1686 | 0.5130 (0.4980 to 0.5295) | 1.0000 (1.0000 to 1.0000) |
-| weekend_posting | weekend_posting | 870 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
+| duplicate_exact | exact_duplicate_payment | 810 | 1.0000 (1.0000 to 1.0000) | 1.0000 (1.0000 to 1.0000) |
+| duplicate_fuzzy | near_duplicate_payment | 2647 | 0.5134 (0.5085 to 0.5183) | 0.8547 (0.8403 to 0.8686) |
+| holiday_posting | holiday_posting | 1110 | 0.7027 (0.7027 to 0.7027) | 1.0000 (1.0000 to 1.0000) |
+| no_approver | missing_approval | 2190 | 0.3562 (0.3562 to 0.3562) | 1.0000 (1.0000 to 1.0000) |
+| period_mismatch | out_of_period_entry | 1440 | 0.5417 (0.5417 to 0.5417) | 1.0000 (1.0000 to 1.0000) |
+| rare_poster | unusual_user | 875 | 0.8286 (0.8132 to 0.8387) | 0.9295 (0.8372 to 1.0000) |
+| round_amount | round_amount_entry | 1859 | 0.4196 (0.4185 to 0.4207) | 1.0000 (1.0000 to 1.0000) |
+| split_under_limit | split_invoice | 1800 | 0.4319 (0.4196 to 0.4455) | 1.0000 (1.0000 to 1.0000) |
+| weekend_posting | weekend_posting | 1260 | 0.6190 (0.6190 to 0.6190) | 1.0000 (1.0000 to 1.0000) |
 
 ## Benford first digit
 
-ap_invoices.amount_cents: status weak_sample (149 non-zero values, fewer than 5000)
+ap_invoices.amount_cents: status weak_sample (217 non-zero values, fewer than 5000)
 
 | Digit | Count | Share | Expected |
 | --- | --- | --- | --- |
-| 1 | 41 | 0.2752 | 0.3010 |
-| 2 | 24 | 0.1611 | 0.1761 |
-| 3 | 36 | 0.2416 | 0.1249 |
-| 4 | 19 | 0.1275 | 0.0969 |
-| 5 | 6 | 0.0403 | 0.0792 |
-| 6 | 4 | 0.0268 | 0.0669 |
-| 7 | 6 | 0.0403 | 0.0580 |
-| 8 | 5 | 0.0336 | 0.0512 |
-| 9 | 8 | 0.0537 | 0.0458 |
+| 1 | 41 | 0.1889 | 0.3010 |
+| 2 | 24 | 0.1106 | 0.1761 |
+| 3 | 50 | 0.2304 | 0.1249 |
+| 4 | 20 | 0.0922 | 0.0969 |
+| 5 | 59 | 0.2719 | 0.0792 |
+| 6 | 4 | 0.0184 | 0.0669 |
+| 7 | 6 | 0.0276 | 0.0580 |
+| 8 | 5 | 0.0230 | 0.0512 |
+| 9 | 8 | 0.0369 | 0.0458 |
 
-Mean absolute deviation 0.0345 (nonconformity). Chi-square 26.54 with 8 degrees of freedom, p-value 0.0008. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.
+Mean absolute deviation 0.0663 (nonconformity). Chi-square 150.29 with 8 degrees of freedom, p-value 0.0000. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.
 
-ap_payments.amount_cents: status weak_sample (126 non-zero values, fewer than 5000)
-
-| Digit | Count | Share | Expected |
-| --- | --- | --- | --- |
-| 1 | 34 | 0.2698 | 0.3010 |
-| 2 | 22 | 0.1746 | 0.1761 |
-| 3 | 31 | 0.2460 | 0.1249 |
-| 4 | 14 | 0.1111 | 0.0969 |
-| 5 | 6 | 0.0476 | 0.0792 |
-| 6 | 3 | 0.0238 | 0.0669 |
-| 7 | 5 | 0.0397 | 0.0580 |
-| 8 | 4 | 0.0317 | 0.0512 |
-| 9 | 7 | 0.0556 | 0.0458 |
-
-Mean absolute deviation 0.0322 (nonconformity). Chi-square 22.47 with 8 degrees of freedom, p-value 0.0041. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.
-
-journal_lines.debit_cents: status weak_sample (515 non-zero values, fewer than 5000)
+ap_payments.amount_cents: status weak_sample (185 non-zero values, fewer than 5000)
 
 | Digit | Count | Share | Expected |
 | --- | --- | --- | --- |
-| 1 | 172 | 0.3340 | 0.3010 |
-| 2 | 133 | 0.2583 | 0.1761 |
-| 3 | 82 | 0.1592 | 0.1249 |
-| 4 | 39 | 0.0757 | 0.0969 |
-| 5 | 21 | 0.0408 | 0.0792 |
-| 6 | 13 | 0.0252 | 0.0669 |
-| 7 | 23 | 0.0447 | 0.0580 |
-| 8 | 17 | 0.0330 | 0.0512 |
-| 9 | 15 | 0.0291 | 0.0458 |
+| 1 | 34 | 0.1838 | 0.3010 |
+| 2 | 22 | 0.1189 | 0.1761 |
+| 3 | 44 | 0.2378 | 0.1249 |
+| 4 | 14 | 0.0757 | 0.0969 |
+| 5 | 52 | 0.2811 | 0.0792 |
+| 6 | 3 | 0.0162 | 0.0669 |
+| 7 | 5 | 0.0270 | 0.0580 |
+| 8 | 4 | 0.0216 | 0.0512 |
+| 9 | 7 | 0.0378 | 0.0458 |
 
-Mean absolute deviation 0.0332 (nonconformity). Chi-square 59.81 with 8 degrees of freedom, p-value 0.0000. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.
+Mean absolute deviation 0.0700 (nonconformity). Chi-square 140.44 with 8 degrees of freedom, p-value 0.0000. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.
+
+journal_lines.debit_cents: status weak_sample (720 non-zero values, fewer than 5000)
+
+| Digit | Count | Share | Expected |
+| --- | --- | --- | --- |
+| 1 | 202 | 0.2806 | 0.3010 |
+| 2 | 162 | 0.2250 | 0.1761 |
+| 3 | 115 | 0.1597 | 0.1249 |
+| 4 | 43 | 0.0597 | 0.0969 |
+| 5 | 121 | 0.1681 | 0.0792 |
+| 6 | 15 | 0.0208 | 0.0669 |
+| 7 | 27 | 0.0375 | 0.0580 |
+| 8 | 18 | 0.0250 | 0.0512 |
+| 9 | 17 | 0.0236 | 0.0458 |
+
+Mean absolute deviation 0.0383 (nonconformity). Chi-square 145.28 with 8 degrees of freedom, p-value 0.0000. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.
 
 The items are listed in items_to_check.csv.

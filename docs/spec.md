@@ -27,7 +27,7 @@ Input is a synthbiz output folder in CSV. Another export is mapped to the same c
 | period_mismatch | period differs from the posting_date month | out_of_period_entry | entry |
 | split_under_limit | 2 or more invoices, one vendor, within N days, each in a band just under the approval limit, together at or over it | split_invoice | invoice group |
 | duplicate_exact | same invoice_id paid twice, or same vendor_id, invoice_number and amount | exact_duplicate_payment | later payment |
-| duplicate_fuzzy | pairs not found by duplicate_exact: same amount within N days, similar vendor name and invoice number | near_duplicate_payment | later payment |
+| duplicate_fuzzy | pairs not found by duplicate_exact: same amount within N days, similar vendor name and invoice number | near_duplicate_payment, typo_duplicate_payment | later payment |
 | entry_number_gap | missing numbers in the je_id sequence | none, not scored | entry |
 | benford_first_digit | first digit test on one amount field | none, not scored | field |
 
@@ -38,7 +38,7 @@ Evaluation harness, the core difference:
 - Per rule and per anomaly type: true positives, false positives, misses, precision, recall, F1, and recall by any rule. A journal label points to the first line of an entry, so it maps to that line's je_id. Duplicates score on the later payment, which is the one synthbiz labels. A split group is a hit when it holds the labeled invoice. Flags on units labeled with another type are counted apart, not as false positives.
 - Cost-weighted score: misses times a per-type miss cost plus flags times a check cost, shown next to two baselines, flag nothing and flag everything. Costs are a JSON input; the shipped defaults are placeholders and every report prints them.
 - Seeds are generated in memory with synthbiz.generate. Thresholds (for example the fuzzy cutoff) are set to the lowest expected cost on the tuning seeds and reported on separate seeds. 95 percent intervals come from a percentile bootstrap over seeds (2,000 draws, fixed RNG seed), since rows inside one seed are not independent. Precision depends on the planted rate, so the report prints it.
-- Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The README must state this limit.
+- synthbiz 0.2.0 plants typo duplicates (typo_duplicate_payment), so duplicate_fuzzy is scored on them next to near_duplicate_payment. The README states the measured recall and the different-amount blocking limit.
 - Output folder: items_to_check.csv, analysis.md, analysis.html (counts per rule, Benford table and status, measured rates labeled "measured on synthetic data") and a README.txt with the notice and disclaimer.
 
 ## Design

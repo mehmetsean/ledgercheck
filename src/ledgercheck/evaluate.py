@@ -24,22 +24,23 @@ from .models import (
 )
 from .rules import RULES, group_entries, journal_flags, run_rules, skip_reasons
 
-RULE_TYPES = {
-    "weekend_posting": "weekend_posting",
-    "holiday_posting": "holiday_posting",
-    "round_amount": "round_amount_entry",
-    "rare_poster": "unusual_user",
-    "no_approver": "missing_approval",
-    "period_mismatch": "out_of_period_entry",
-    "split_under_limit": "split_invoice",
-    "duplicate_exact": "exact_duplicate_payment",
-    "duplicate_fuzzy": "near_duplicate_payment",
+RULE_TYPES: dict[str, tuple[str, ...]] = {
+    "weekend_posting": ("weekend_posting",),
+    "holiday_posting": ("holiday_posting",),
+    "round_amount": ("round_amount_entry",),
+    "rare_poster": ("unusual_user",),
+    "no_approver": ("missing_approval",),
+    "period_mismatch": ("out_of_period_entry",),
+    "split_under_limit": ("split_invoice",),
+    "duplicate_exact": ("exact_duplicate_payment",),
+    "duplicate_fuzzy": ("near_duplicate_payment", "typo_duplicate_payment"),
 }
 SCORED_RULES = tuple(r for r in RULES if r in RULE_TYPES)
 TYPE_TABLE = {
     "split_invoice": "ap_invoices",
     "exact_duplicate_payment": "ap_payments",
     "near_duplicate_payment": "ap_payments",
+    "typo_duplicate_payment": "ap_payments",
 }
 LABEL_COLUMNS = ["table", "row_id", "anomaly_type", "details"]
 JOURNAL = "journal_lines"
@@ -89,6 +90,7 @@ DEFAULT_COSTS = CostTable(
         "split_invoice": 600.0,
         "exact_duplicate_payment": 1000.0,
         "near_duplicate_payment": 800.0,
+        "typo_duplicate_payment": 800.0,
     },
 )
 
@@ -120,6 +122,7 @@ class AnyRule:
 class Scores:
     rules: dict[str, RuleScore]
     any_rule: dict[str, AnyRule]
+    unscored: dict[str, int] = field(default_factory=dict)
 
 
 DEFAULT_SETTINGS = Settings()
@@ -378,10 +381,11 @@ def score(
     for rule in SCORED_RULES:
         if rule in skipped:
             continue
-        kind = RULE_TYPES[rule]
+        kinds = RULE_TYPES[rule]
+        kind = kinds[0]
         table = TYPE_TABLE.get(kind, JOURNAL)
-        mine = by_type.get(kind, set())
-        others = set().union(*(u for t, u in by_type.items() if t != kind))
+        mine = set().union(*(by_type.get(k, set()) for k in kinds))
+        others = set().union(*(u for t, u in by_type.items() if t not in kinds))
         mine_flags = [f for f in flags if f.rule == rule]
         covered: set[Unit] = set()
         fp = other = 0
@@ -395,8 +399,13 @@ def score(
                 fp += 1
         caught |= set().union(*(_flag_units(f) for f in mine_flags))
         totals.setdefault(table, _unit_total(ledger, table))
-        miss_cost = costs.miss_cost[kind]
         missed = sorted(mine - covered)
+        miss_total = sum(
+            costs.miss_cost[k] * len(by_type.get(k, set()) - covered) for k in kinds
+        )
+        nothing_total = sum(
+            costs.miss_cost[k] * len(by_type.get(k, set())) for k in kinds
+        )
         rules[rule] = RuleScore(
             rule=rule,
             anomaly_type=kind,
@@ -407,16 +416,19 @@ def score(
             other_label=other,
             misses=len(mine) - len(covered),
             units=totals[table],
-            cost=miss_cost * len(missed) + costs.check_cost * len(mine_flags),
-            cost_nothing=miss_cost * len(mine),
+            cost=miss_total + costs.check_cost * len(mine_flags),
+            cost_nothing=nothing_total,
             cost_everything=costs.check_cost * totals[table],
             missed_details=tuple(details[u][0] for u in missed[:5]),
         )
     any_rule = {}
-    for score_ in rules.values():
-        units = by_type.get(score_.anomaly_type, set())
-        any_rule[score_.anomaly_type] = AnyRule(len(units), len(units & caught))
-    return Scores(rules, any_rule)
+    for rule in rules:
+        for kind in RULE_TYPES[rule]:
+            units = by_type.get(kind, set())
+            any_rule[kind] = AnyRule(len(units), len(units & caught))
+    scored = {k for kinds in RULE_TYPES.values() for k in kinds}
+    unscored = {k: len(u) for k, u in sorted(by_type.items()) if k not in scored}
+    return Scores(rules, any_rule, unscored)
 
 
 def _ratio_metrics(

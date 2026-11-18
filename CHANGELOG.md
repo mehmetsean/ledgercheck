@@ -4,8 +4,19 @@ All notable changes are listed here. The format follows Keep a Changelog.
 
 ## Unreleased
 
+### Changed
+
+- Moved the synthbiz pin to 0.2.0 (commit e60de623bba11135dac1794a8e883bcc9b02face), which adds legitimate unlabeled background rows.
+- Re-measured the rates in src/ledgercheck/measured.json, the benchmark in docs/benchmark.md, the examples and the README numbers. Precision now shows false alarms on the background rows.
+- Precision and recall per rule at the run defaults, old to new (precision, recall): duplicate_exact 1.0000 to 1.0000, 1.0000 to 1.0000; duplicate_fuzzy 1.0000 to 0.5134, 1.0000 to 0.8547; holiday_posting 1.0000 to 0.7027, 1.0000 to 1.0000; no_approver 1.0000 to 0.3562, 1.0000 to 1.0000; period_mismatch 1.0000 to 0.5417, 1.0000 to 1.0000; rare_poster 1.0000 to 0.8286, 0.2402 to 0.9295; round_amount 0.9667 to 0.4196, 1.0000 to 1.0000; split_under_limit 0.5130 to 0.4319, 1.0000 to 1.0000; weekend_posting 1.0000 to 0.6190, 1.0000 to 1.0000.
+- rare_poster recall rose because the background rows add manual entries, which lowers the share of the planted users. CFO_1 and TAX_ACCOUNTANT_1 are the new false alarms.
+- The metrics file lists miss_costs per label type for each rule, and unscored_label_types.
+- Rewrote the README sections on how to read the numbers, the typo limit and the clean ledger.
+
 ### Added
 
+- Scoring of typo_duplicate_payment. duplicate_fuzzy now scores against near_duplicate_payment and typo_duplicate_payment.
+- The evaluation lists label types that no rule scores, and never fails on them.
 - Rules core: weekend_posting, holiday_posting, round_amount, rare_poster, no_approver, period_mismatch, split_under_limit and entry_number_gap, with a plain reason for every flag.
 - Duplicate checks: exact keys, then fuzzy matching blocked by amount and a date window, with a work budget.
 - A Benford first digit table that prints a status line (weak_sample, not_applicable or ok) before the numbers.

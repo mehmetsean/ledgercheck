@@ -370,3 +370,113 @@ def test_only_evaluate_names_labels_and_manifest_files():
     for path in SRC.glob("*.py"):
         named = [t for t in strings_of(path) if t in ("labels.csv", "manifest.json")]
         assert bool(named) == (path.name == "evaluate.py"), path.name
+
+
+def test_folder_text_names_label_types_no_rule_scores():
+    lines = [line("JE-1", SAT, line_id="L1")]
+    lab = [ev.Label("journal_lines", "L1", "future_type", "d")]
+    scores = ev.score([], lab, ledger(lines=lines), ev.DEFAULT_COSTS)
+    text = folder_text(scores, 1, None, ev.DEFAULT_COSTS)
+    assert "labels of a type no rule scores: future_type 1" in text
+
+
+def test_folder_text_caps_the_unscored_type_lines():
+    lines = [line("JE-1", SAT, line_id="L1")]
+    scores = ev.score([], [], ledger(lines=lines), ev.DEFAULT_COSTS)
+    many = {f"type_{i:04d}": 1 for i in range(1000)}
+    scores = ev.Scores(scores.rules, scores.any_rule, many)
+    text = folder_text(scores, 1000, None, ev.DEFAULT_COSTS)
+    shown = [x for x in text.splitlines() if x.startswith("labels of a type")]
+    assert len(shown) == 10
+    assert "and 990 more types" in text
+
+
+def test_folder_text_cleans_and_caps_unscored_type_names():
+    lines = [line("JE-1", SAT, line_id="L1")]
+    scores = ev.score([], [], ledger(lines=lines), ev.DEFAULT_COSTS)
+    names = {"bad\x1b[31m\nfake line": 1, "y" * 200: 2}
+    scores = ev.Scores(scores.rules, scores.any_rule, names)
+    text = folder_text(scores, 2, None, ev.DEFAULT_COSTS)
+    assert "\x1b" not in text
+    assert "\nfake line" not in text
+    shown = [x for x in text.splitlines() if x.startswith("labels of a type")]
+    assert len(shown) == 2
+    assert all(
+        len(x) <= len("labels of a type no rule scores: ") + 80 + 2 for x in shown
+    )
+
+
+def test_metrics_list_unscored_label_types_and_per_type_miss_costs():
+    doc = metrics_dict(small_report(), COMMAND)
+    assert "unscored_label_types" in doc
+    fuzzy = doc["rules"]["duplicate_fuzzy"]["miss_costs"]
+    assert list(fuzzy) == ["near_duplicate_payment", "typo_duplicate_payment"]
+    assert "near_duplicate_payment 800" in markdown(doc)
+    doc["unscored_label_types"] = {"future_type": 3}
+    assert "| future\\_type | 3 |" in markdown(doc)
+
+
+def test_planted_duplicates_keep_the_amount_of_the_first_payment():
+    ds = generate(Params(seed=7, months=6, size="small", anomaly_rate=0.3))
+    pays = {r["payment_id"]: r for r in ds.tables["ap_payments"]}
+    invoices = {r["invoice_id"]: r for r in ds.tables["ap_invoices"]}
+    kinds = ("near_duplicate_payment", "typo_duplicate_payment")
+    found = [x for x in ds.labels if x["anomaly_type"] in kinds]
+    assert {x["anomaly_type"] for x in found} == set(kinds)
+    for lab in found:
+        row = pays[lab["row_id"]]
+        first = pays[lab["details"].rsplit("first paid as ", 1)[1]]
+        assert first["amount_cents"] == row["amount_cents"]
+        assert first["payment_date"] <= row["payment_date"]
+        if lab["anomaly_type"] == "typo_duplicate_payment":
+            assert first["vendor_id"] == row["vendor_id"]
+        else:
+            first_invoice = invoices[first["invoice_id"]]
+            twin = invoices[row["invoice_id"]]
+            assert first_invoice["invoice_number"] == twin["invoice_number"]
+
+
+def doc_with_unscored(count: int) -> dict:
+    doc = metrics_dict(small_report(), COMMAND)
+    doc["unscored_label_types"] = {f"type_{i:04d}": 1 for i in range(10)}
+    doc["unscored_more"] = count - 10
+    return doc
+
+
+def test_unscored_section_is_capped_in_markdown_and_html():
+    from ledgercheck.eval_report import page
+
+    doc = doc_with_unscored(1000)
+    md = markdown(doc)
+    assert md.count("| type\\_") == 10
+    assert "and 990 more types" in md
+    assert page(doc).count("<td>type_") == 10
+    assert "and 990 more types" in page(doc)
+
+
+def test_unscored_types_are_capped_and_cleaned_in_metrics():
+    report = small_report()
+    many = {f"t{i:04d}\x1b[1m": 1 for i in range(1000)}
+    report.seed_scores[0].unscored.update(many)
+    doc = metrics_dict(report, COMMAND)
+    assert len(doc["unscored_label_types"]) == 10
+    assert doc["unscored_more"] == 990
+    assert all("\x1b" not in k for k in doc["unscored_label_types"])
+
+
+def test_unscored_names_cannot_break_the_markdown_table():
+    doc = doc_with_unscored(10)
+    doc["unscored_label_types"] = {"a|b": 1, "[x](http://e)": 2, "<b>`c`": 3}
+    md = markdown(doc)
+    assert "| a\\|b | 1 |" in md
+    assert "| \\[x\\](http://e) | 2 |" in md
+    assert "| \\<b\\>\\`c\\` | 3 |" in md
+
+
+def test_unscored_names_that_clean_to_the_same_key_add_up():
+    report = small_report()
+    long = "x" * 80
+    report.seed_scores[0].unscored.update({long + "a": 1, long + "b": 2})
+    doc = metrics_dict(report, COMMAND)
+    assert doc["unscored_label_types"][long] == 3
+    assert doc["unscored_more"] == 0
