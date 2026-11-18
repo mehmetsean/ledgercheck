@@ -18,11 +18,10 @@ First release.
 - A Benford first digit table that prints a status line (weak_sample, not_applicable or ok) before the numbers.
 - The `ledgercheck run` command, which writes items_to_check.csv, analysis.md, analysis.html and README.txt.
 - The evaluation harness, `ledgercheck evaluate`, which scores the rules against synthbiz labels with bootstrap intervals over seeds.
-- src/ledgercheck/measured.json, the measured rates shipped with the package, and scripts/make_measured.py to rebuild and check it.
+- src/ledgercheck/measured.json, the measured rates shipped with the package, and scripts/make_measured.py to rebuild and check it. The rates, the benchmark in docs/benchmark.md and the examples were made on synthbiz 0.2.0 (tag v0.2.0, commit e60de623bba11135dac1794a8e883bcc9b02face). That data has unlabeled background rows, so precision shows false alarms.
 - A duplicate search benchmark, benchmarks/bench.py, and docs/benchmark.md.
 - Docs: a rewritten README, docs/adr/, DATA.md, THIRD_PARTY_NOTICES.md and SECURITY.md.
 - Issue templates and a pull request template.
 - examples/, built from synthbiz seed 42 with scripts/make_examples.py, which also checks them byte for byte.
 - scripts/reproduce_readme.py, which rebuilds the numbers block in the README and checks it in CI.
-- Measured rates in src/ledgercheck/measured.json, the benchmark in docs/benchmark.md, the examples and the README numbers, all made on synthbiz 0.2.0 (commit e60de623bba11135dac1794a8e883bcc9b02face), which has legitimate unlabeled background rows, so precision shows false alarms.
 - The metrics file lists miss_costs per label type for each rule, and unscored_label_types.
