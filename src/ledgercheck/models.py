@@ -73,11 +73,10 @@ class DuplicateSettings:
     max_cell_steps: 400,000,000. The fuzzy search stops with an error when its
         work passes this. Work is counted in Levenshtein cell steps: each
         compare costs 16 for call overhead, plus len(a) x len(b) when the
-        edit distance really runs. Measured on one Mac with CPython 3.13, the
-        pure Python edit distance does 19.4 million cell steps per second on
-        names of 20 to 100 characters, and a call has about 0.3 microsecond of
-        overhead. So 400,000,000 / 19,400,000 is about 20 seconds in the worst
-        case. Slower machines take longer.
+        edit distance really runs. The default was chosen from one timing run
+        on one Mac, so the stop time on other machines is not known.
+        benchmarks/ will hold the script that measures it. A user may raise
+        max_cell_steps, up to 10**15, at the cost of a longer run.
     """
 
     window_days: int = 14
