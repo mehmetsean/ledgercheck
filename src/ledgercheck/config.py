@@ -10,6 +10,7 @@ from .io import SPECS
 from .models import ColumnMap, DuplicateSettings, Settings
 
 MAX_JSON_BYTES = 1_000_000
+ARTICLES: dict[Any, str] = {int: "an integer", float: "a number", bool: "true or false"}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -40,7 +41,7 @@ def _string_map(name: str, where: str, data: Any, allowed: set[str]) -> dict[str
     _check_keys(name, where, data, allowed)
     for value in data.values():
         if not isinstance(value, str) or not value:
-            raise ValueError(f"{name}: every value in {where} must be a text")
+            raise ValueError(f"{name}: every value in {where} must be non-empty text")
     return dict(data)
 
 
@@ -87,7 +88,7 @@ def _number(name: str, key: str, value: Any, kind: type) -> Any:
         return value
     if kind is bool and isinstance(value, bool):
         return value
-    raise ValueError(f"{name}: {key} must be a {kind.__name__}")
+    raise ValueError(f"{name}: {key} must be {ARTICLES[kind]}")
 
 
 def _fill(name: str, data: dict[str, Any], cls: type, skip: set[str]) -> dict[str, Any]:

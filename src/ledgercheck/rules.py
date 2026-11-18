@@ -137,10 +137,7 @@ def _rare_posters(
             continue
         if count / total >= settings.rare_share:
             continue
-        reason = (
-            f"User id {user} posts rarely for source type {source} "
-            f"({count} of {total} entries)"
-        )
+        reason = f"User id {user} posts rarely"
         out.append(_flag("rare_poster", je_id, group, reason))
     return out
 

@@ -2,7 +2,7 @@
 
 ## Problem
 The target user is a small finance team that wants to check its own books before a close or before outside accountants start: journal entries posted on weekends, on holidays, by rare users or to the wrong period, invoices split under an approval limit, and vendor invoices paid twice. Journal entry testing is named in PCAOB AS 2401 and AICPA AU-C 240, so the tests themselves are well known. A list of flags is hard to act on without knowing how often each rule is right, and uploading client files to an outside service adds a confidentiality question.
-ledgercheck runs these tests on the user's machine or in a static browser page, and every rule ships with precision and recall measured against the labeled anomalies in synthbiz data, with confidence intervals. The scripts and seeds are in the repo, so a reader can rerun every number.
+ledgercheck runs these tests on the user's machine or in a static browser page, and every rule will ship with precision and recall measured against the labeled anomalies in synthbiz data, with confidence intervals. The scripts and seeds will be in the repo, so a reader can rerun every number.
 
 ## Buyer
 - Small accounting and bookkeeping firms doing clean-up, month-end close or pre-checks for clients.

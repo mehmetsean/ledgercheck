@@ -111,9 +111,7 @@ def rare_ledger() -> list:  # type: ignore[type-arg]
 def test_rare_poster_only_says_the_user_posts_rarely() -> None:
     found = flags_for("rare_poster", lines=rare_ledger())
     assert [f.unit_id for f in found] == ["JE-900"]
-    assert found[0].reason == (
-        "User id seldom posts rarely for source type MANUAL (1 of 41 entries)"
-    )
+    assert found[0].reason == "User id seldom posts rarely"
 
 
 def test_rare_poster_needs_enough_entries() -> None:

@@ -21,15 +21,15 @@ DISCLAIMER = (
     "payments are found. False positives and misses are expected."
 )
 FLAG_NOTE = (
-    "Every line is an item to check. It is not a finding of fraud or error, "
-    "and it says nothing about a person."
+    "Every line is an item to check. It is not a finding of fraud or error. "
+    "A rare_poster line only says that a user id posts rarely."
 )
 FILES = ("items_to_check.csv", "analysis.md", "analysis.html", "README.txt")
 CSV_HEADER = ["rule", "table", "unit_id", "row_ids", "reason"]
 RISKY_START = ("=", "+", "-", "@", "\t", "\r")
 
 README = f"""\
-ledgercheck output (an analysis, not an audit)
+ledgercheck output (an analysis)
 
 Files in this folder:
 - items_to_check.csv: one row per item to check, with the rule and the reason
@@ -135,7 +135,7 @@ def markdown(result: AnalysisResult) -> str:
     if not result.benford:
         out += ["SKIP: no amount field in the input.", ""]
     for b in result.benford:
-        out += [f"Status first. {_benford_head(b)}", ""]
+        out += [_benford_head(b), ""]
         out += ["| Digit | Count | Share | Expected |", "| --- | --- | --- | --- |"]
         out += [f"| {a} | {c} | {s} | {e} |" for a, c, s, e in _digit_rows(b)]
         out += ["", _benford_tail(b), ""]
@@ -171,7 +171,7 @@ def page(result: AnalysisResult) -> str:
     if not result.benford:
         body.append("<p>SKIP: no amount field in the input.</p>")
     for b in result.benford:
-        body.append(f"<p>Status first. {_h(_benford_head(b))}</p>")
+        body.append(f"<p>{_h(_benford_head(b))}</p>")
         body.append(_table(["Digit", "Count", "Share", "Expected"], _digit_rows(b)))
         body.append(f"<p>{_h(_benford_tail(b))}</p>")
     body.append("<p>The items are listed in items_to_check.csv.</p>")
