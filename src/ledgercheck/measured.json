@@ -1,0 +1,507 @@
+{
+  "any_rule": {
+    "exact_duplicate_payment": {
+      "caught": 900,
+      "labeled": 900,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "holiday_posting": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "missing_approval": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "near_duplicate_payment": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "out_of_period_entry": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "round_amount_entry": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "split_invoice": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    },
+    "unusual_user": {
+      "caught": 209,
+      "labeled": 870,
+      "recall": 0.2402,
+      "recall_ci": [
+        0.1724,
+        0.308
+      ]
+    },
+    "weekend_posting": {
+      "caught": 870,
+      "labeled": 870,
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "command": "ledgercheck evaluate --size large --months 12 --tune-seeds 1-10 --seeds 101-130 --rate 0.1",
+  "costs": {
+    "check_cost": 20.0,
+    "miss_cost": {
+      "exact_duplicate_payment": 1000.0,
+      "holiday_posting": 100.0,
+      "missing_approval": 200.0,
+      "near_duplicate_payment": 800.0,
+      "out_of_period_entry": 300.0,
+      "round_amount_entry": 100.0,
+      "split_invoice": 600.0,
+      "unusual_user": 150.0,
+      "weekend_posting": 100.0
+    },
+    "placeholder": true
+  },
+  "grid": {
+    "invoice_thresholds": [
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95
+    ],
+    "name_thresholds": [
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95
+    ],
+    "rare_shares": [
+      0.02,
+      0.05,
+      0.1
+    ]
+  },
+  "label": "measured on synthetic data (synthbiz)",
+  "method": "95 percent intervals come from a percentile bootstrap over seeds: 2000 draws, fixed RNG seed 20261117, seeds resampled with replacement, pooled precision, recall and F1 recomputed from summed counts.",
+  "params": {
+    "months": 12,
+    "size": "large"
+  },
+  "planted": {
+    "anomaly_rate": 0.1,
+    "mean_labels_per_seed": 262.0
+  },
+  "report_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130
+  ],
+  "rules": {
+    "duplicate_exact": {
+      "anomaly_type": "exact_duplicate_payment",
+      "cost_flag_everything_per_seed": 25850.6667,
+      "cost_flag_nothing_per_seed": 30000.0,
+      "cost_per_seed": 600.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 900,
+      "labeled": 900,
+      "miss_cost": 1000.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 900
+    },
+    "duplicate_fuzzy": {
+      "anomaly_type": "near_duplicate_payment",
+      "cost_flag_everything_per_seed": 25850.6667,
+      "cost_flag_nothing_per_seed": 23200.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 800.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "holiday_posting": {
+      "anomaly_type": "holiday_posting",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 2900.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 100.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "no_approver": {
+      "anomaly_type": "missing_approval",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 5800.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 200.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "period_mismatch": {
+      "anomaly_type": "out_of_period_entry",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 8700.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 300.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "rare_poster": {
+      "anomaly_type": "unusual_user",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 4350.0,
+      "cost_per_seed": 3444.3333,
+      "f1": 0.3874,
+      "f1_ci": [
+        0.2941,
+        0.471
+      ],
+      "false_positives": 0,
+      "flags": 209,
+      "labeled": 870,
+      "miss_cost": 150.0,
+      "misses": 661,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 0.2402,
+      "recall_ci": [
+        0.1724,
+        0.308
+      ],
+      "true_positives": 209
+    },
+    "round_amount": {
+      "anomaly_type": "round_amount_entry",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 2900.0,
+      "cost_per_seed": 600.0,
+      "f1": 0.9831,
+      "f1_ci": [
+        0.9831,
+        0.9831
+      ],
+      "false_positives": 30,
+      "flags": 900,
+      "labeled": 870,
+      "miss_cost": 100.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 0.9667,
+      "precision_ci": [
+        0.9667,
+        0.9667
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "split_under_limit": {
+      "anomaly_type": "split_invoice",
+      "cost_flag_everything_per_seed": 31997.3333,
+      "cost_flag_nothing_per_seed": 17400.0,
+      "cost_per_seed": 1124.0,
+      "f1": 0.6781,
+      "f1_ci": [
+        0.6649,
+        0.6924
+      ],
+      "false_positives": 826,
+      "flags": 1686,
+      "labeled": 870,
+      "miss_cost": 600.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 0.513,
+      "precision_ci": [
+        0.498,
+        0.5295
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "weekend_posting": {
+      "anomaly_type": "weekend_posting",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 2900.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 100.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    }
+  },
+  "settings": {
+    "defaults": {
+      "invoice_threshold": 0.8,
+      "name_threshold": 0.8,
+      "rare_share": 0.05
+    },
+    "tuned": {
+      "invoice_threshold": 0.8,
+      "name_threshold": 0.8,
+      "rare_share": 0.1
+    }
+  },
+  "synthetic": true,
+  "tune_seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "tuned_rules": {
+    "duplicate_fuzzy": {
+      "anomaly_type": "near_duplicate_payment",
+      "cost_flag_everything_per_seed": 25850.6667,
+      "cost_flag_nothing_per_seed": 23200.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 800.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "rare_poster": {
+      "anomaly_type": "unusual_user",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 4350.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 150.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    }
+  }
+}
