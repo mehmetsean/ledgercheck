@@ -115,10 +115,10 @@ def _unscored(report: EvalReport) -> tuple[dict[str, int], int]:
     total: dict[str, int] = {}
     for s in report.seed_scores:
         for kind, count in s.unscored.items():
-            total[kind] = total.get(kind, 0) + count
-    first = sorted(total.items())[:UNSCORED_SHOWN]
-    cleaned = {plain(k)[:80]: v for k, v in first}
-    return cleaned, max(len(total) - UNSCORED_SHOWN, 0)
+            key = plain(kind)[:80]
+            total[key] = total.get(key, 0) + count
+    first = dict(sorted(total.items())[:UNSCORED_SHOWN])
+    return first, max(len(total) - UNSCORED_SHOWN, 0)
 
 
 def metrics_dict(report: EvalReport, command: str) -> dict[str, Any]:

@@ -471,3 +471,12 @@ def test_unscored_names_cannot_break_the_markdown_table():
     assert "| a\\|b | 1 |" in md
     assert "| \\[x\\](http://e) | 2 |" in md
     assert "| \\<b\\>\\`c\\` | 3 |" in md
+
+
+def test_unscored_names_that_clean_to_the_same_key_add_up():
+    report = small_report()
+    long = "x" * 80
+    report.seed_scores[0].unscored.update({long + "a": 1, long + "b": 2})
+    doc = metrics_dict(report, COMMAND)
+    assert doc["unscored_label_types"][long] == 3
+    assert doc["unscored_more"] == 0
