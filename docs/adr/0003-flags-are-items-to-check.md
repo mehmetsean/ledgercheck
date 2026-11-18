@@ -8,7 +8,7 @@ A rule hit on a journal entry or a payment is a reason to look, not proof of an 
 
 ## Decision
 
-Every flag has a rule name, the table, the unit id, the row ids and a plain reason, for example "Posted on Saturday 2025-03-08". The output is called an analysis, never an audit, review or compilation. Every output file carries the disclaimer: decision support only, not legal, tax, accounting or assurance advice, with no guarantee of compliance. A rare_poster reason says only that a user id posts rarely. Rules never read labels or the memo column. Output text cells that start with =, +, - or @ are escaped so a spreadsheet does not run them.
+Every flag has a rule name, the table, the unit id, the row ids and a plain reason, for example "Posted on Saturday 2025-03-08". The output is called an analysis, never an audit, review or compilation. Every output file except items_to_check.csv carries the disclaimer: decision support only, not legal, tax, accounting or assurance advice, with no guarantee of compliance. The CSV keeps a plain header row, so the disclaimer sits in analysis.md and README.txt in the same folder. A rare_poster reason says only that a user id posts rarely. Rules never read labels or the memo column. Output text cells are escaped so a spreadsheet does not run them: a cell that starts with =, +, -, @, a tab, a carriage return or a line feed gets a leading quote. Leading spaces are skipped before that test, as in src/ledgercheck/report.py.
 
 ## Consequences
 

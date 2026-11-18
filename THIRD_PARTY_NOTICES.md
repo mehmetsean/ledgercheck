@@ -10,7 +10,7 @@ ledgercheck has no runtime dependencies. It uses only the Python standard librar
 
 ## Optional extras
 
-The eval and dev extras install these packages. They are used to make synthetic data, test and check the code only.
+The eval extra installs synthbiz. The dev extra installs synthbiz and the tools in the table below. They are used to make synthetic data, test and check the code only.
 
 | Part | Version checked | License |
 | --- | --- | --- |

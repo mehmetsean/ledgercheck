@@ -4,7 +4,7 @@
 
 | Version | Supported |
 | --- | --- |
-| 0.1.x | yes |
+| 0.1.x (first release pending) | yes |
 
 ## Report a problem
 

@@ -10,4 +10,4 @@ One feature per pull request. Say what and why in a few lines.
 - [ ] `python scripts/make_examples.py --check` passes
 - [ ] Synthetic data only
 
-Outside code contributions are not accepted. Bug reports by issue are welcome.
+Outside code contributions are not accepted. Bug reports by issue are fine.

@@ -19,4 +19,4 @@ Options considered:
 
 ## Consequences
 
-A near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 87 vendor-name pairs with a different amount, and none was planted, so the benchmark cannot say how many of those are real. The README states this limit. An amount tolerance band is a possible later change. benchmarks/bench.py asserts that blocking never loses a match that shares an amount and falls in the window, and CI runs a quick form of it.
+A near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 87 different-amount pairs, and none was planted, so the benchmark cannot say how many of those are real. docs/benchmark.md shows 80 near duplicate false positives for the same run because it scores one flag per later payment, not one per pair. The README states this limit. An amount tolerance band is a possible later change. benchmarks/bench.py checks that blocking never loses a match that shares an amount and falls in the window, and exits non-zero when it does. CI runs a quick form of it.
