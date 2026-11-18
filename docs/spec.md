@@ -84,6 +84,6 @@ Benchmark: benchmarks/bench.py on synthbiz size large, 12 and 36 months, seed 42
 - Third-party parts (Pyodide, hypothesis, pytest and others) keep their own licenses, listed in THIRD_PARTY_NOTICES.md. The holiday calendar is computed by rule in code written for this repo, and so is the legal suffix list for name matching. Any outside list added later is recorded in DATA.md with its license.
 
 ## Liability notes
-- Every output and the demo footer say: "Decision support only, not legal, tax, accounting or assurance advice. No guarantee of compliance, and no guarantee that all errors or duplicate payments are found. False positives and misses are expected; the measured rates are shown."
+- Every output file except items_to_check.csv, and the demo footer, say: "Decision support only, not legal, tax, accounting or assurance advice. No guarantee of compliance, and no guarantee that all errors or duplicate payments are found. False positives and misses are expected; the measured rates are shown."
 - The output is an analysis. Flags are items to check with a reason, never fraud findings or claims about a person. A rare_poster reason says the user id posts rarely, nothing more.
 - Measured rates come from synthetic data and are labeled so; rates on real books will differ. Benford results always show their status. Demos, examples and tests use synthbiz synthetic data only, never real company data.

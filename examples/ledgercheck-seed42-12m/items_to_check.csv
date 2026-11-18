@@ -1,0 +1,10 @@
+rule,table,unit_id,row_ids,reason
+weekend_posting,journal_lines,JE-000514,JL-0001027 JL-0001028,Posted on Saturday 2025-08-02
+holiday_posting,journal_lines,JE-000515,JL-0001029 JL-0001030,"Posted on 2025-12-25, Christmas Day"
+round_amount,journal_lines,JE-000001,JL-0000001 JL-0000002,"Debit total 1,000,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000513,JL-0001025 JL-0001026,"Debit total 30,000.00 is a whole multiple of 1,000.00"
+split_under_limit,ap_invoices,API-000041,API-000041 API-000047,"2 invoices from vendor V-0006 within 7 days, each just under 5,000.00, total 8,555.65"
+split_under_limit,ap_invoices,API-000064,API-000064 API-000083,"2 invoices from vendor V-0002 within 7 days, each just under 5,000.00, total 7,300.89"
+split_under_limit,ap_invoices,API-000148,API-000148 API-000149,"2 invoices from vendor V-0005 within 7 days, each just under 5,000.00, total 9,538.08"
+duplicate_exact,ap_payments,APP-000124,APP-000124 APP-000123,"Invoice API-000145 was paid twice, first by APP-000123"
+duplicate_fuzzy,ap_payments,APP-000126,APP-000126 APP-000125,"Paid 2 days after APP-000125, same amount, vendor name similarity 1.00, invoice number similarity 1.00"

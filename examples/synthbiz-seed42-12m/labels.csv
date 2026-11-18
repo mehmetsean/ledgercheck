@@ -1,0 +1,7 @@
+table,row_id,anomaly_type,details
+ap_payments,APP-000124,exact_duplicate_payment,"Same vendor, invoice and amount as APP-000123"
+ap_payments,APP-000126,near_duplicate_payment,"Invoice 44282 paid again under V-0009 (Redwood Plastics Co.), similar to V-0005; first paid as APP-000125"
+ap_invoices,API-000148,split_invoice,"2 invoices from V-0005 on 2025-09-15 (API-000148, API-000149) each under the 500000 cent limit, total 953808 cents"
+journal_lines,JL-0001025,round_amount_entry,Manual accrual of exactly 3000000 cents (JE-000513)
+journal_lines,JL-0001027,weekend_posting,Manual accrual posted on a Saturday (JE-000514)
+journal_lines,JL-0001029,holiday_posting,Manual accrual posted on Christmas Day (JE-000515)

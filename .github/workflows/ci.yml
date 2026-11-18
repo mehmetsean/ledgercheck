@@ -30,6 +30,8 @@ jobs:
       - run: pytest
       - run: python benchmarks/bench.py --quick
       - run: python scripts/make_measured.py --check
+      - run: python scripts/reproduce_readme.py --check
+      - run: python scripts/make_examples.py --check
 
   ci:
     name: ci

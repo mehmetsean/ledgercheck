@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ledgercheck analysis</title>
+<style>body{font-family:sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse}td,th{border:1px solid #888;padding:.25rem .5rem}</style>
+</head>
+<body>
+<h1>ledgercheck analysis</h1>
+<p>All rights reserved. You may view the code and run it to evaluate it. Commercial use needs a paid license from Mehmet Tuzunkan: https://www.linkedin.com/in/mstuzunkan</p>
+<p>Decision support only, not legal, tax, accounting or assurance advice. No guarantee of compliance, and no guarantee that all errors or duplicate payments are found. False positives and misses are expected; the measured rates are shown.</p>
+<p>Every line is an item to check. It is not a finding of fraud or error. A rare_poster line only says that a user id posts rarely.</p>
+<h2>Input</h2>
+<ul><li>journal_lines: 1030 rows</li><li>ap_invoices: 149 rows</li><li>ap_payments: 126 rows</li><li>vendors: 9 rows</li><li>journal entry ids with no trailing digits, skipped by entry_number_gap: 0</li><li>journal entry ids that share a number: 0</li></ul>
+<h2>Items to check per rule</h2>
+<table>
+<tr><th>Rule</th><th>Items</th><th>Note</th></tr>
+<tr><td>weekend_posting</td><td>1</td><td></td></tr>
+<tr><td>holiday_posting</td><td>1</td><td></td></tr>
+<tr><td>round_amount</td><td>2</td><td></td></tr>
+<tr><td>rare_poster</td><td>0</td><td></td></tr>
+<tr><td>no_approver</td><td>0</td><td></td></tr>
+<tr><td>period_mismatch</td><td>0</td><td></td></tr>
+<tr><td>split_under_limit</td><td>3</td><td></td></tr>
+<tr><td>duplicate_exact</td><td>1</td><td></td></tr>
+<tr><td>duplicate_fuzzy</td><td>1</td><td></td></tr>
+<tr><td>entry_number_gap</td><td>0</td><td></td></tr>
+</table>
+<p>duplicate_fuzzy search: k = 2 (most same-amount payments in one window), 2 pair compares.</p>
+<h2>Measured on synthetic data</h2>
+<p>All rates here are measured on synthetic data (synthbiz). These rates come from generated data, so they do not predict precision or recall on real books.</p>
+<p>Report seeds 101-130, tuning seeds 1-10, size large, 12 months.</p>
+<p>Planted anomaly rate 0.1, about 262.0 labeled anomalies per seed. Precision depends on this rate.</p>
+<p>Run defaults, used for the rows named after a rule: fuzzy name_threshold 0.8, invoice_threshold 0.8, rare_share 0.05.</p>
+<p>95 percent intervals come from a percentile bootstrap over seeds: 2000 draws, fixed RNG seed 20261117, seeds resampled with replacement, pooled precision, recall and F1 recomputed from summed counts.</p>
+<p>synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos.</p>
+<p>A 1.0000 to 1.0000 interval means every report seed scored 1.0000 on synthetic data. It is not a guarantee for real books.</p>
+<p>Reproduce: ledgercheck evaluate --size large --months 12 --tune-seeds 1-10 --seeds 101-130 --rate 0.1</p>
+<table>
+<tr><th>Rule</th><th>Anomaly type</th><th>Flags</th><th>Precision (95% interval)</th><th>Recall (95% interval)</th></tr>
+<tr><td>duplicate_exact</td><td>exact_duplicate_payment</td><td>900</td><td>1.0000 (1.0000 to 1.0000)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>duplicate_fuzzy</td><td>near_duplicate_payment</td><td>870</td><td>1.0000 (1.0000 to 1.0000)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>holiday_posting</td><td>holiday_posting</td><td>870</td><td>1.0000 (1.0000 to 1.0000)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>no_approver</td><td>missing_approval</td><td>870</td><td>1.0000 (1.0000 to 1.0000)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>period_mismatch</td><td>out_of_period_entry</td><td>870</td><td>1.0000 (1.0000 to 1.0000)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>rare_poster</td><td>unusual_user</td><td>209</td><td>1.0000 (1.0000 to 1.0000)</td><td>0.2402 (0.1724 to 0.3080)</td></tr>
+<tr><td>round_amount</td><td>round_amount_entry</td><td>900</td><td>0.9667 (0.9667 to 0.9667)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>split_under_limit</td><td>split_invoice</td><td>1686</td><td>0.5130 (0.4980 to 0.5295)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+<tr><td>weekend_posting</td><td>weekend_posting</td><td>870</td><td>1.0000 (1.0000 to 1.0000)</td><td>1.0000 (1.0000 to 1.0000)</td></tr>
+</table>
+<h2>Benford first digit</h2>
+<p>ap_invoices.amount_cents: status weak_sample (149 non-zero values, fewer than 5000)</p>
+<table>
+<tr><th>Digit</th><th>Count</th><th>Share</th><th>Expected</th></tr>
+<tr><td>1</td><td>41</td><td>0.2752</td><td>0.3010</td></tr>
+<tr><td>2</td><td>24</td><td>0.1611</td><td>0.1761</td></tr>
+<tr><td>3</td><td>36</td><td>0.2416</td><td>0.1249</td></tr>
+<tr><td>4</td><td>19</td><td>0.1275</td><td>0.0969</td></tr>
+<tr><td>5</td><td>6</td><td>0.0403</td><td>0.0792</td></tr>
+<tr><td>6</td><td>4</td><td>0.0268</td><td>0.0669</td></tr>
+<tr><td>7</td><td>6</td><td>0.0403</td><td>0.0580</td></tr>
+<tr><td>8</td><td>5</td><td>0.0336</td><td>0.0512</td></tr>
+<tr><td>9</td><td>8</td><td>0.0537</td><td>0.0458</td></tr>
+</table>
+<p>Mean absolute deviation 0.0345 (nonconformity). Chi-square 26.54 with 8 degrees of freedom, p-value 0.0008. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.</p>
+<p>ap_payments.amount_cents: status weak_sample (126 non-zero values, fewer than 5000)</p>
+<table>
+<tr><th>Digit</th><th>Count</th><th>Share</th><th>Expected</th></tr>
+<tr><td>1</td><td>34</td><td>0.2698</td><td>0.3010</td></tr>
+<tr><td>2</td><td>22</td><td>0.1746</td><td>0.1761</td></tr>
+<tr><td>3</td><td>31</td><td>0.2460</td><td>0.1249</td></tr>
+<tr><td>4</td><td>14</td><td>0.1111</td><td>0.0969</td></tr>
+<tr><td>5</td><td>6</td><td>0.0476</td><td>0.0792</td></tr>
+<tr><td>6</td><td>3</td><td>0.0238</td><td>0.0669</td></tr>
+<tr><td>7</td><td>5</td><td>0.0397</td><td>0.0580</td></tr>
+<tr><td>8</td><td>4</td><td>0.0317</td><td>0.0512</td></tr>
+<tr><td>9</td><td>7</td><td>0.0556</td><td>0.0458</td></tr>
+</table>
+<p>Mean absolute deviation 0.0322 (nonconformity). Chi-square 22.47 with 8 degrees of freedom, p-value 0.0041. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.</p>
+<p>journal_lines.debit_cents: status weak_sample (515 non-zero values, fewer than 5000)</p>
+<table>
+<tr><th>Digit</th><th>Count</th><th>Share</th><th>Expected</th></tr>
+<tr><td>1</td><td>172</td><td>0.3340</td><td>0.3010</td></tr>
+<tr><td>2</td><td>133</td><td>0.2583</td><td>0.1761</td></tr>
+<tr><td>3</td><td>82</td><td>0.1592</td><td>0.1249</td></tr>
+<tr><td>4</td><td>39</td><td>0.0757</td><td>0.0969</td></tr>
+<tr><td>5</td><td>21</td><td>0.0408</td><td>0.0792</td></tr>
+<tr><td>6</td><td>13</td><td>0.0252</td><td>0.0669</td></tr>
+<tr><td>7</td><td>23</td><td>0.0447</td><td>0.0580</td></tr>
+<tr><td>8</td><td>17</td><td>0.0330</td><td>0.0512</td></tr>
+<tr><td>9</td><td>15</td><td>0.0291</td><td>0.0458</td></tr>
+</table>
+<p>Mean absolute deviation 0.0332 (nonconformity). Chi-square 59.81 with 8 degrees of freedom, p-value 0.0000. Chi-square rejects almost any large sample, even a tiny gap from the Benford shares. Read the mean absolute deviation first.</p>
+<p>The items are listed in items_to_check.csv.</p>
+</body>
+</html>
