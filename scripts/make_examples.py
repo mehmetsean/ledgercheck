@@ -30,9 +30,7 @@ def build(folder: Path) -> None:
     )  # fmt: skip
     if code not in (0, None):
         raise SystemExit(code)
-    code = ledgercheck_main(
-        ["run", str(folder / DATA), "--out", str(folder / OUT)]
-    )
+    code = ledgercheck_main(["run", str(folder / DATA), "--out", str(folder / OUT)])
     if code != 0:
         raise SystemExit(code)
 
