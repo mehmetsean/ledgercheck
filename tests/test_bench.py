@@ -223,6 +223,27 @@ def test_table_header_columns() -> None:
     ]
 
 
+def test_table_row_cells() -> None:
+    full = bench.Row("m", 1.5, 3, 10, 2000, 7)
+    full.types = {
+        "duplicate_exact": (3, 1, 2, 0.75, 0.6),
+        "duplicate_fuzzy": (4, 0, 1, 1.0, 0.8),
+    }
+    empty = bench.Row("e", 0.25, 1, 0, 0, 0)
+    empty.types = {
+        "duplicate_exact": (0, 0, 0, None, None),
+        "duplicate_fuzzy": (0, 0, 5, None, 0.0),
+    }
+    lines = bench.table({"rows": [full, empty]}).splitlines()
+    assert lines[2] == (
+        "| m | 1.500 | 3 | 10 | 2,000 | 7 | 3/1/2 | 0.750 | 0.600 "
+        "| 4/0/1 | 1.000 | 0.800 |"
+    )
+    assert lines[3] == (
+        "| e | 0.250 | 1 | 0 | n/a | 0 | 0/0/0 | n/a | n/a | 0/0/5 | n/a | 0.000 |"
+    )
+
+
 def test_step_rate_labels_use_real_lengths() -> None:
     labels = [label for label, _, _ in bench.step_rate()]
     assert labels == [

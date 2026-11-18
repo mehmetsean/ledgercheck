@@ -1,6 +1,6 @@
 """Time and score three duplicate payment methods on synthetic data (synthbiz).
 
-Run from the repo root:
+Run from the repo root after pip install -e ".[eval]":
 python benchmarks/bench.py [--quick] [--repeat N] [--out docs/benchmark.md]
 """
 
@@ -19,7 +19,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from synthbiz.generate import Params, generate  # noqa: E402
+try:
+    from synthbiz.generate import Params, generate
+except ImportError:
+    sys.exit('synthbiz is missing. Run: pip install -e ".[eval]"')
 
 from ledgercheck import duplicates as dup  # noqa: E402
 from ledgercheck.duplicates import (  # noqa: E402
@@ -88,7 +91,7 @@ def blocked(ledger: Ledger, s: DuplicateSettings) -> list[Flag]:
 
 
 class _Counter(dup._Meter):
-    # counting turns off the max_cell_steps budget
+    # no limit
     total = 0
 
     def __init__(self, limit: int | None, window_days: int) -> None:
