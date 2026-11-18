@@ -1,10 +1,177 @@
 rule,table,unit_id,row_ids,reason
-weekend_posting,journal_lines,JE-000514,JL-0001027 JL-0001028,Posted on Saturday 2025-08-02
-holiday_posting,journal_lines,JE-000515,JL-0001029 JL-0001030,"Posted on 2025-12-25, Christmas Day"
+weekend_posting,journal_lines,JE-000519,JL-0001037 JL-0001038,Posted on Sunday 2025-03-09
+weekend_posting,journal_lines,JE-000520,JL-0001039 JL-0001040,Posted on Sunday 2025-01-26
+weekend_posting,journal_lines,JE-000523,JL-0001045 JL-0001046,Posted on Sunday 2025-02-23
+weekend_posting,journal_lines,JE-000526,JL-0001051 JL-0001052,Posted on Sunday 2025-03-23
+weekend_posting,journal_lines,JE-000529,JL-0001057 JL-0001058,Posted on Saturday 2025-04-26
+weekend_posting,journal_lines,JE-000532,JL-0001063 JL-0001064,Posted on Saturday 2025-05-03
+weekend_posting,journal_lines,JE-000535,JL-0001069 JL-0001070,Posted on Saturday 2025-06-07
+weekend_posting,journal_lines,JE-000538,JL-0001075 JL-0001076,Posted on Saturday 2025-07-12
+weekend_posting,journal_lines,JE-000541,JL-0001081 JL-0001082,Posted on Saturday 2025-08-23
+weekend_posting,journal_lines,JE-000544,JL-0001087 JL-0001088,Posted on Sunday 2025-09-07
+weekend_posting,journal_lines,JE-000547,JL-0001093 JL-0001094,Posted on Sunday 2025-10-12
+weekend_posting,journal_lines,JE-000550,JL-0001099 JL-0001100,Posted on Saturday 2025-11-22
+weekend_posting,journal_lines,JE-000553,JL-0001105 JL-0001106,Posted on Sunday 2025-12-21
+weekend_posting,journal_lines,JE-000578,JL-0001155 JL-0001156,Posted on Saturday 2025-03-29
+weekend_posting,journal_lines,JE-000580,JL-0001159 JL-0001160,Posted on Saturday 2025-06-28
+weekend_posting,journal_lines,JE-000582,JL-0001163 JL-0001164,Posted on Saturday 2025-09-27
+weekend_posting,journal_lines,JE-000584,JL-0001167 JL-0001168,Posted on Sunday 2025-12-28
+holiday_posting,journal_lines,JE-000556,JL-0001111 JL-0001112,"Posted on 2025-01-01, New Year's Day"
+holiday_posting,journal_lines,JE-000557,JL-0001113 JL-0001114,"Posted on 2025-01-20, Martin Luther King Jr. Day"
+holiday_posting,journal_lines,JE-000558,JL-0001115 JL-0001116,"Posted on 2025-02-17, Washington's Birthday"
+holiday_posting,journal_lines,JE-000559,JL-0001117 JL-0001118,"Posted on 2025-05-26, Memorial Day"
+holiday_posting,journal_lines,JE-000560,JL-0001119 JL-0001120,"Posted on 2025-06-19, Juneteenth"
+holiday_posting,journal_lines,JE-000561,JL-0001121 JL-0001122,"Posted on 2025-07-04, Independence Day"
+holiday_posting,journal_lines,JE-000562,JL-0001123 JL-0001124,"Posted on 2025-09-01, Labor Day"
+holiday_posting,journal_lines,JE-000563,JL-0001125 JL-0001126,"Posted on 2025-10-13, Columbus Day"
+holiday_posting,journal_lines,JE-000564,JL-0001127 JL-0001128,"Posted on 2025-11-11, Veterans Day"
+holiday_posting,journal_lines,JE-000565,JL-0001129 JL-0001130,"Posted on 2025-11-27, Thanksgiving Day"
+holiday_posting,journal_lines,JE-000566,JL-0001131 JL-0001132,"Posted on 2025-12-25, Christmas Day"
 round_amount,journal_lines,JE-000001,JL-0000001 JL-0000002,"Debit total 1,000,000.00 is a whole multiple of 1,000.00"
-round_amount,journal_lines,JE-000513,JL-0001025 JL-0001026,"Debit total 30,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000518,JL-0001035 JL-0001036,"Debit total 36,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000587,JL-0001173 JL-0001174,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000588,JL-0001175 JL-0001176,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000589,JL-0001177 JL-0001178,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000590,JL-0001179 JL-0001180,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000591,JL-0001181 JL-0001182,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000592,JL-0001183 JL-0001184,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000593,JL-0001185 JL-0001186,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000594,JL-0001187 JL-0001188,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000595,JL-0001189 JL-0001190,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000596,JL-0001191 JL-0001192,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000597,JL-0001193 JL-0001194,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000598,JL-0001195 JL-0001196,"Debit total 11,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000599,JL-0001197 JL-0001198,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000600,JL-0001199 JL-0001200,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000601,JL-0001201 JL-0001202,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000602,JL-0001203 JL-0001204,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000603,JL-0001205 JL-0001206,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000604,JL-0001207 JL-0001208,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000605,JL-0001209 JL-0001210,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000606,JL-0001211 JL-0001212,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000607,JL-0001213 JL-0001214,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000608,JL-0001215 JL-0001216,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000609,JL-0001217 JL-0001218,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000610,JL-0001219 JL-0001220,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000611,JL-0001221 JL-0001222,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000612,JL-0001223 JL-0001224,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000613,JL-0001225 JL-0001226,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000614,JL-0001227 JL-0001228,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000615,JL-0001229 JL-0001230,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000616,JL-0001231 JL-0001232,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000617,JL-0001233 JL-0001234,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000618,JL-0001235 JL-0001236,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000619,JL-0001237 JL-0001238,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000620,JL-0001239 JL-0001240,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+round_amount,journal_lines,JE-000621,JL-0001241 JL-0001242,"Debit total 3,000.00 is a whole multiple of 1,000.00"
+rare_poster,journal_lines,JE-000579,JL-0001157 JL-0001158,User id CFO_1 posts rarely
+rare_poster,journal_lines,JE-000581,JL-0001161 JL-0001162,User id CFO_1 posts rarely
+rare_poster,journal_lines,JE-000583,JL-0001165 JL-0001166,User id CFO_1 posts rarely
+rare_poster,journal_lines,JE-000585,JL-0001169 JL-0001170,User id CFO_1 posts rarely
+rare_poster,journal_lines,JE-000586,JL-0001171 JL-0001172,User id TAX_ACCOUNTANT_1 posts rarely
+no_approver,journal_lines,JE-000520,JL-0001039 JL-0001040,No approver is recorded
+no_approver,journal_lines,JE-000521,JL-0001041 JL-0001042,No approver is recorded
+no_approver,journal_lines,JE-000522,JL-0001043 JL-0001044,No approver is recorded
+no_approver,journal_lines,JE-000523,JL-0001045 JL-0001046,No approver is recorded
+no_approver,journal_lines,JE-000524,JL-0001047 JL-0001048,No approver is recorded
+no_approver,journal_lines,JE-000525,JL-0001049 JL-0001050,No approver is recorded
+no_approver,journal_lines,JE-000526,JL-0001051 JL-0001052,No approver is recorded
+no_approver,journal_lines,JE-000527,JL-0001053 JL-0001054,No approver is recorded
+no_approver,journal_lines,JE-000528,JL-0001055 JL-0001056,No approver is recorded
+no_approver,journal_lines,JE-000529,JL-0001057 JL-0001058,No approver is recorded
+no_approver,journal_lines,JE-000530,JL-0001059 JL-0001060,No approver is recorded
+no_approver,journal_lines,JE-000531,JL-0001061 JL-0001062,No approver is recorded
+no_approver,journal_lines,JE-000532,JL-0001063 JL-0001064,No approver is recorded
+no_approver,journal_lines,JE-000533,JL-0001065 JL-0001066,No approver is recorded
+no_approver,journal_lines,JE-000534,JL-0001067 JL-0001068,No approver is recorded
+no_approver,journal_lines,JE-000535,JL-0001069 JL-0001070,No approver is recorded
+no_approver,journal_lines,JE-000536,JL-0001071 JL-0001072,No approver is recorded
+no_approver,journal_lines,JE-000537,JL-0001073 JL-0001074,No approver is recorded
+no_approver,journal_lines,JE-000538,JL-0001075 JL-0001076,No approver is recorded
+no_approver,journal_lines,JE-000539,JL-0001077 JL-0001078,No approver is recorded
+no_approver,journal_lines,JE-000540,JL-0001079 JL-0001080,No approver is recorded
+no_approver,journal_lines,JE-000541,JL-0001081 JL-0001082,No approver is recorded
+no_approver,journal_lines,JE-000542,JL-0001083 JL-0001084,No approver is recorded
+no_approver,journal_lines,JE-000543,JL-0001085 JL-0001086,No approver is recorded
+no_approver,journal_lines,JE-000544,JL-0001087 JL-0001088,No approver is recorded
+no_approver,journal_lines,JE-000545,JL-0001089 JL-0001090,No approver is recorded
+no_approver,journal_lines,JE-000546,JL-0001091 JL-0001092,No approver is recorded
+no_approver,journal_lines,JE-000547,JL-0001093 JL-0001094,No approver is recorded
+no_approver,journal_lines,JE-000548,JL-0001095 JL-0001096,No approver is recorded
+no_approver,journal_lines,JE-000549,JL-0001097 JL-0001098,No approver is recorded
+no_approver,journal_lines,JE-000550,JL-0001099 JL-0001100,No approver is recorded
+no_approver,journal_lines,JE-000551,JL-0001101 JL-0001102,No approver is recorded
+no_approver,journal_lines,JE-000552,JL-0001103 JL-0001104,No approver is recorded
+no_approver,journal_lines,JE-000553,JL-0001105 JL-0001106,No approver is recorded
+no_approver,journal_lines,JE-000554,JL-0001107 JL-0001108,No approver is recorded
+no_approver,journal_lines,JE-000555,JL-0001109 JL-0001110,No approver is recorded
+no_approver,journal_lines,JE-000556,JL-0001111 JL-0001112,No approver is recorded
+no_approver,journal_lines,JE-000557,JL-0001113 JL-0001114,No approver is recorded
+no_approver,journal_lines,JE-000558,JL-0001115 JL-0001116,No approver is recorded
+no_approver,journal_lines,JE-000559,JL-0001117 JL-0001118,No approver is recorded
+no_approver,journal_lines,JE-000560,JL-0001119 JL-0001120,No approver is recorded
+no_approver,journal_lines,JE-000561,JL-0001121 JL-0001122,No approver is recorded
+no_approver,journal_lines,JE-000562,JL-0001123 JL-0001124,No approver is recorded
+no_approver,journal_lines,JE-000563,JL-0001125 JL-0001126,No approver is recorded
+no_approver,journal_lines,JE-000564,JL-0001127 JL-0001128,No approver is recorded
+no_approver,journal_lines,JE-000565,JL-0001129 JL-0001130,No approver is recorded
+no_approver,journal_lines,JE-000566,JL-0001131 JL-0001132,No approver is recorded
+period_mismatch,journal_lines,JE-000567,JL-0001133 JL-0001134,Period 2025-01 differs from posting month 2025-02
+period_mismatch,journal_lines,JE-000568,JL-0001135 JL-0001136,Period 2025-02 differs from posting month 2025-03
+period_mismatch,journal_lines,JE-000569,JL-0001137 JL-0001138,Period 2025-03 differs from posting month 2025-04
+period_mismatch,journal_lines,JE-000570,JL-0001139 JL-0001140,Period 2025-04 differs from posting month 2025-05
+period_mismatch,journal_lines,JE-000571,JL-0001141 JL-0001142,Period 2025-05 differs from posting month 2025-06
+period_mismatch,journal_lines,JE-000572,JL-0001143 JL-0001144,Period 2025-06 differs from posting month 2025-07
+period_mismatch,journal_lines,JE-000573,JL-0001145 JL-0001146,Period 2025-07 differs from posting month 2025-08
+period_mismatch,journal_lines,JE-000574,JL-0001147 JL-0001148,Period 2025-08 differs from posting month 2025-09
+period_mismatch,journal_lines,JE-000575,JL-0001149 JL-0001150,Period 2025-09 differs from posting month 2025-10
+period_mismatch,journal_lines,JE-000576,JL-0001151 JL-0001152,Period 2025-10 differs from posting month 2025-11
+period_mismatch,journal_lines,JE-000577,JL-0001153 JL-0001154,Period 2025-11 differs from posting month 2025-12
 split_under_limit,ap_invoices,API-000041,API-000041 API-000047,"2 invoices from vendor V-0006 within 7 days, each just under 5,000.00, total 8,555.65"
 split_under_limit,ap_invoices,API-000064,API-000064 API-000083,"2 invoices from vendor V-0002 within 7 days, each just under 5,000.00, total 7,300.89"
-split_under_limit,ap_invoices,API-000148,API-000148 API-000149,"2 invoices from vendor V-0005 within 7 days, each just under 5,000.00, total 9,538.08"
+split_under_limit,ap_invoices,API-000148,API-000148 API-000149,"2 invoices from vendor V-0005 within 7 days, each just under 5,000.00, total 7,097.36"
+split_under_limit,ap_invoices,API-000150,API-000150 API-000151 API-000152,"3 invoices from vendor V-0007 within 7 days, each just under 5,000.00, total 14,443.00"
 duplicate_exact,ap_payments,APP-000124,APP-000124 APP-000123,"Invoice API-000145 was paid twice, first by APP-000123"
 duplicate_fuzzy,ap_payments,APP-000126,APP-000126 APP-000125,"Paid 2 days after APP-000125, same amount, vendor name similarity 1.00, invoice number similarity 1.00"
+duplicate_fuzzy,ap_payments,APP-000128,APP-000128 APP-000127,"Paid 1 days after APP-000127, same amount, vendor name similarity 1.00, invoice number similarity 0.83"
+duplicate_fuzzy,ap_payments,APP-000141,APP-000141 APP-000140,"Paid 6 days after APP-000140, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000142,APP-000142 APP-000140,"Paid 13 days after APP-000140, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000143,APP-000143 APP-000141,"Paid 14 days after APP-000141, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000144,APP-000144 APP-000142,"Paid 14 days after APP-000142, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000145,APP-000145 APP-000143,"Paid 14 days after APP-000143, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000146,APP-000146 APP-000144,"Paid 14 days after APP-000144, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000148,APP-000148 APP-000147,"Paid 7 days after APP-000147, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000149,APP-000149 APP-000147,"Paid 14 days after APP-000147, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000150,APP-000150 APP-000148,"Paid 14 days after APP-000148, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000151,APP-000151 APP-000149,"Paid 14 days after APP-000149, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000152,APP-000152 APP-000150,"Paid 14 days after APP-000150, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000153,APP-000153 APP-000151,"Paid 14 days after APP-000151, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000154,APP-000154 APP-000153,"Paid 8 days after APP-000153, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000155,APP-000155 APP-000153,"Paid 14 days after APP-000153, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000156,APP-000156 APP-000154,"Paid 13 days after APP-000154, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000158,APP-000158 APP-000157,"Paid 7 days after APP-000157, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000159,APP-000159 APP-000157,"Paid 14 days after APP-000157, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000160,APP-000160 APP-000158,"Paid 14 days after APP-000158, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000161,APP-000161 APP-000159,"Paid 14 days after APP-000159, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000162,APP-000162 APP-000160,"Paid 14 days after APP-000160, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000163,APP-000163 APP-000161,"Paid 14 days after APP-000161, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000164,APP-000164 APP-000162,"Paid 14 days after APP-000162, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000165,APP-000165 APP-000163,"Paid 14 days after APP-000163, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000166,APP-000166 APP-000164,"Paid 14 days after APP-000164, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000168,APP-000168 APP-000167,"Paid 8 days after APP-000167, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000169,APP-000169 APP-000167,"Paid 14 days after APP-000167, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000170,APP-000170 APP-000168,"Paid 13 days after APP-000168, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000171,APP-000171 APP-000169,"Paid 14 days after APP-000169, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000172,APP-000172 APP-000170,"Paid 14 days after APP-000170, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000173,APP-000173 APP-000171,"Paid 14 days after APP-000171, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000174,APP-000174 APP-000173,"Paid 8 days after APP-000173, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000175,APP-000175 APP-000173,"Paid 14 days after APP-000173, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000176,APP-000176 APP-000174,"Paid 13 days after APP-000174, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000178,APP-000178 APP-000177,"Paid 7 days after APP-000177, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000179,APP-000179 APP-000177,"Paid 14 days after APP-000177, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000180,APP-000180 APP-000178,"Paid 14 days after APP-000178, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000181,APP-000181 APP-000179,"Paid 14 days after APP-000179, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000182,APP-000182 APP-000180,"Paid 14 days after APP-000180, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000183,APP-000183 APP-000181,"Paid 14 days after APP-000181, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000184,APP-000184 APP-000182,"Paid 14 days after APP-000182, same amount, vendor name similarity 1.00, invoice number similarity 0.86"
+duplicate_fuzzy,ap_payments,APP-000185,APP-000185 APP-000183,"Paid 14 days after APP-000183, same amount, vendor name similarity 1.00, invoice number similarity 0.86"

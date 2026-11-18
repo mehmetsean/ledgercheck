@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "synthbiz_version": "0.1.2",
+  "synthbiz_version": "0.2.0",
   "company": "Westbrook Metalworks LLC",
   "parameters": {
     "seed": 42,
@@ -8,22 +8,34 @@
     "size": "small",
     "anomaly_rate": 0.02,
     "start_date": "2025-01-01",
+    "background": true,
     "format": "csv"
   },
   "anomaly_count": 6,
+  "background_counts": {
+    "close_window_accrual": 11,
+    "human_weekend_close": 4,
+    "occasional_poster": 5,
+    "recurring_fixed_invoice": 53,
+    "round_rent_accrual": 12,
+    "round_retainer_invoice": 12,
+    "system_batch_weekend": 23,
+    "system_recurring": 24
+  },
+  "approval_limit_cents": 500000,
   "files": {
-    "README.txt": "cb828aeeac330938320e0f36cfa1744145a82d191c68dc8ead089202721663ea",
-    "ap_invoices.csv": "12de327a75a075631c9524c61a8a330da5b4ce16e7c1ab20b1f1fde0091dd74a",
-    "ap_payments.csv": "aad70b45b70a1e6ddb80f59b7f3b015ad56cfc02752b5a1fb9e6ea8f12752136",
+    "README.txt": "43826ede72835e74e18adf0cea4bbb1e099d335f757a01738c819bbba4833882",
+    "ap_invoices.csv": "358e52abfbdb30f6faa71951e03bc3f6a548b769b2277dfb63aa89b0ea53013e",
+    "ap_payments.csv": "d5b203df2fd99c38c6ea46505292b2e916616b30cbd2e1f9b58ace99d8c38aad",
     "ar_invoices.csv": "b973eb858960a89c744df1f941d47d786fc99d115c8a51c47fefa7d2df3d13d5",
     "ar_receipts.csv": "4f693c1a0b794613740604bc278b00f7a737c68abf5f82d0265aa3cc890c8af5",
-    "bank_transactions.csv": "590d0ee142a1bb727a78544838586347457e06c41636319eb7135a062e9bc83f",
+    "bank_transactions.csv": "7d4b7d253720d22e22283b7d568605e84b595c6d61b4c3db24126087f3cf5ffd",
     "chart_of_accounts.csv": "0b094d9087fb55c5ebad4efb1eb1dd5b76adfb8f9609c9010dc907fcdedc6245",
     "customers.csv": "5ba5452e677d2abba18d9d75443bdbdf8fc1a5c2796dea4ef6f4a93c5830bd5b",
     "data_dictionary.md": "dfe451e86609fd7a40d29a0e31455cd4db6356f9149018ef6755aa158a9b23d5",
-    "journal_lines.csv": "f949a93533e8be1df5023e6ad0cf45940de4c249caba854bd8f9b09beab36015",
-    "labels.csv": "87479fb934edc4317de2529a2f5ba374a227955d41039a0e2d73beb47b41783d",
-    "reconciling_items.csv": "2da99f4561ddf280625f7683e0022262f9993945d28c577ad19f21a6b41f5ba0",
+    "journal_lines.csv": "6b3deface4a88e9ac70a035ff1fe45c361c3051c73107a5e9d9704c0d2ac5ff2",
+    "labels.csv": "34174a9897b7fa42119d057f5f235e367972c8e45890a40021f667adcf9dd460",
+    "reconciling_items.csv": "09bb4ed924cb8745fa07269412c64c5eb3c466266e2bea454f6333def4c83636",
     "schema.json": "f93d4f510dbec49a7888c0393651b43f8fbfe2b6259a9ff54842c01ef55e6caf",
     "vendors.csv": "ae120f5b2cc9cc3b2fcaff3df21e68b02fbca2ccd838c71883fdea6586048637"
   }

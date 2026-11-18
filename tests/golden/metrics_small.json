@@ -46,8 +46,8 @@
       ]
     },
     "round_amount_entry": {
-      "caught": 9,
-      "labeled": 9,
+      "caught": 6,
+      "labeled": 6,
       "recall": 1.0,
       "recall_ci": [
         1.0,
@@ -55,21 +55,30 @@
       ]
     },
     "split_invoice": {
-      "caught": 9,
-      "labeled": 9,
+      "caught": 6,
+      "labeled": 6,
       "recall": 1.0,
       "recall_ci": [
         1.0,
         1.0
       ]
     },
-    "unusual_user": {
-      "caught": 0,
+    "typo_duplicate_payment": {
+      "caught": 4,
       "labeled": 6,
-      "recall": 0.0,
+      "recall": 0.6667,
+      "recall_ci": [
+        0.5,
+        1.0
+      ]
+    },
+    "unusual_user": {
+      "caught": 2,
+      "labeled": 6,
+      "recall": 0.3333,
       "recall_ci": [
         0.0,
-        0.0
+        1.0
       ]
     },
     "weekend_posting": {
@@ -93,6 +102,7 @@
       "out_of_period_entry": 300.0,
       "round_amount_entry": 100.0,
       "split_invoice": 600.0,
+      "typo_duplicate_payment": 800.0,
       "unusual_user": 150.0,
       "weekend_posting": 100.0
     },
@@ -130,7 +140,7 @@
   "rules": {
     "duplicate_exact": {
       "anomaly_type": "exact_duplicate_payment",
-      "cost_flag_everything_per_seed": 660.0,
+      "cost_flag_everything_per_seed": 940.0,
       "cost_flag_nothing_per_seed": 3000.0,
       "cost_per_seed": 60.0,
       "f1": 1.0,
@@ -158,52 +168,52 @@
     },
     "duplicate_fuzzy": {
       "anomaly_type": "near_duplicate_payment",
-      "cost_flag_everything_per_seed": 660.0,
-      "cost_flag_nothing_per_seed": 2400.0,
-      "cost_per_seed": 60.0,
-      "f1": 1.0,
+      "cost_flag_everything_per_seed": 940.0,
+      "cost_flag_nothing_per_seed": 4000.0,
+      "cost_per_seed": 746.6667,
+      "f1": 0.5532,
       "f1_ci": [
-        1.0,
-        1.0
+        0.5333,
+        0.5714
       ],
-      "false_positives": 0,
-      "flags": 9,
-      "labeled": 9,
+      "false_positives": 19,
+      "flags": 32,
+      "labeled": 15,
       "miss_cost": 800.0,
-      "misses": 0,
+      "misses": 2,
       "other_label": 0,
-      "precision": 1.0,
+      "precision": 0.4062,
       "precision_ci": [
-        1.0,
-        1.0
+        0.3846,
+        0.4444
       ],
-      "recall": 1.0,
+      "recall": 0.8667,
       "recall_ci": [
-        1.0,
+        0.8,
         1.0
       ],
-      "true_positives": 9
+      "true_positives": 13
     },
     "holiday_posting": {
       "anomaly_type": "holiday_posting",
-      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_everything_per_seed": 4053.3333,
       "cost_flag_nothing_per_seed": 200.0,
-      "cost_per_seed": 40.0,
-      "f1": 1.0,
+      "cost_per_seed": 100.0,
+      "f1": 0.5714,
       "f1_ci": [
-        1.0,
-        1.0
+        0.5714,
+        0.5714
       ],
-      "false_positives": 0,
-      "flags": 6,
+      "false_positives": 9,
+      "flags": 15,
       "labeled": 6,
       "miss_cost": 100.0,
       "misses": 0,
       "other_label": 0,
-      "precision": 1.0,
+      "precision": 0.4,
       "precision_ci": [
-        1.0,
-        1.0
+        0.4,
+        0.4
       ],
       "recall": 1.0,
       "recall_ci": [
@@ -214,24 +224,24 @@
     },
     "no_approver": {
       "anomaly_type": "missing_approval",
-      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_everything_per_seed": 4053.3333,
       "cost_flag_nothing_per_seed": 400.0,
-      "cost_per_seed": 40.0,
-      "f1": 1.0,
+      "cost_per_seed": 280.0,
+      "f1": 0.25,
       "f1_ci": [
-        1.0,
-        1.0
+        0.25,
+        0.25
       ],
-      "false_positives": 0,
-      "flags": 6,
+      "false_positives": 36,
+      "flags": 42,
       "labeled": 6,
       "miss_cost": 200.0,
       "misses": 0,
       "other_label": 0,
-      "precision": 1.0,
+      "precision": 0.1429,
       "precision_ci": [
-        1.0,
-        1.0
+        0.1429,
+        0.1429
       ],
       "recall": 1.0,
       "recall_ci": [
@@ -242,24 +252,24 @@
     },
     "period_mismatch": {
       "anomaly_type": "out_of_period_entry",
-      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_everything_per_seed": 4053.3333,
       "cost_flag_nothing_per_seed": 600.0,
-      "cost_per_seed": 40.0,
-      "f1": 1.0,
+      "cost_per_seed": 80.0,
+      "f1": 0.6667,
       "f1_ci": [
-        1.0,
-        1.0
+        0.6667,
+        0.6667
       ],
-      "false_positives": 0,
-      "flags": 6,
+      "false_positives": 6,
+      "flags": 12,
       "labeled": 6,
       "miss_cost": 300.0,
       "misses": 0,
       "other_label": 0,
-      "precision": 1.0,
+      "precision": 0.5,
       "precision_ci": [
-        1.0,
-        1.0
+        0.5,
+        0.5
       ],
       "recall": 1.0,
       "recall_ci": [
@@ -270,102 +280,108 @@
     },
     "rare_poster": {
       "anomaly_type": "unusual_user",
-      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_everything_per_seed": 4053.3333,
       "cost_flag_nothing_per_seed": 300.0,
-      "cost_per_seed": 300.0,
-      "f1": null,
-      "f1_ci": null,
-      "false_positives": 0,
-      "flags": 0,
+      "cost_per_seed": 253.3333,
+      "f1": 0.2857,
+      "f1_ci": [
+        0.0,
+        0.6667
+      ],
+      "false_positives": 6,
+      "flags": 8,
       "labeled": 6,
       "miss_cost": 150.0,
-      "misses": 6,
+      "misses": 4,
       "other_label": 0,
-      "precision": null,
-      "precision_ci": null,
-      "recall": 0.0,
+      "precision": 0.25,
+      "precision_ci": [
+        0.0,
+        0.5
+      ],
+      "recall": 0.3333,
       "recall_ci": [
         0.0,
-        0.0
+        1.0
       ],
-      "true_positives": 0
+      "true_positives": 2
     },
     "round_amount": {
       "anomaly_type": "round_amount_entry",
-      "cost_flag_everything_per_seed": 3026.6667,
-      "cost_flag_nothing_per_seed": 300.0,
-      "cost_per_seed": 80.0,
-      "f1": 0.8571,
-      "f1_ci": [
-        0.8571,
-        0.8571
-      ],
-      "false_positives": 3,
-      "flags": 12,
-      "labeled": 9,
-      "miss_cost": 100.0,
-      "misses": 0,
-      "other_label": 0,
-      "precision": 0.75,
-      "precision_ci": [
-        0.75,
-        0.75
-      ],
-      "recall": 1.0,
-      "recall_ci": [
-        1.0,
-        1.0
-      ],
-      "true_positives": 9
-    },
-    "split_under_limit": {
-      "anomaly_type": "split_invoice",
-      "cost_flag_everything_per_seed": 1033.3333,
-      "cost_flag_nothing_per_seed": 1800.0,
-      "cost_per_seed": 73.3333,
-      "f1": 0.8571,
-      "f1_ci": [
-        0.75,
-        1.0
-      ],
-      "false_positives": 3,
-      "flags": 11,
-      "labeled": 9,
-      "miss_cost": 600.0,
-      "misses": 0,
-      "other_label": 0,
-      "precision": 0.75,
-      "precision_ci": [
-        0.6,
-        1.0
-      ],
-      "recall": 1.0,
-      "recall_ci": [
-        1.0,
-        1.0
-      ],
-      "true_positives": 9
-    },
-    "weekend_posting": {
-      "anomaly_type": "weekend_posting",
-      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_everything_per_seed": 4053.3333,
       "cost_flag_nothing_per_seed": 200.0,
-      "cost_per_seed": 40.0,
-      "f1": 1.0,
+      "cost_per_seed": 220.0,
+      "f1": 0.3077,
       "f1_ci": [
-        1.0,
-        1.0
+        0.3077,
+        0.3077
       ],
-      "false_positives": 0,
-      "flags": 6,
+      "false_positives": 27,
+      "flags": 33,
       "labeled": 6,
       "miss_cost": 100.0,
       "misses": 0,
       "other_label": 0,
-      "precision": 1.0,
+      "precision": 0.1818,
       "precision_ci": [
+        0.1818,
+        0.1818
+      ],
+      "recall": 1.0,
+      "recall_ci": [
         1.0,
         1.0
+      ],
+      "true_positives": 6
+    },
+    "split_under_limit": {
+      "anomaly_type": "split_invoice",
+      "cost_flag_everything_per_seed": 1400.0,
+      "cost_flag_nothing_per_seed": 1200.0,
+      "cost_per_seed": 86.6667,
+      "f1": 0.6316,
+      "f1_ci": [
+        0.5714,
+        0.6667
+      ],
+      "false_positives": 7,
+      "flags": 13,
+      "labeled": 6,
+      "miss_cost": 600.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 0.4615,
+      "precision_ci": [
+        0.4,
+        0.5
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 6
+    },
+    "weekend_posting": {
+      "anomaly_type": "weekend_posting",
+      "cost_flag_everything_per_seed": 4053.3333,
+      "cost_flag_nothing_per_seed": 200.0,
+      "cost_per_seed": 120.0,
+      "f1": 0.5,
+      "f1_ci": [
+        0.5,
+        0.5
+      ],
+      "false_positives": 12,
+      "flags": 18,
+      "labeled": 6,
+      "miss_cost": 100.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 0.3333,
+      "precision_ci": [
+        0.3333,
+        0.3333
       ],
       "recall": 1.0,
       "recall_ci": [
@@ -382,9 +398,9 @@
       "rare_share": 0.05
     },
     "tuned": {
-      "invoice_threshold": 0.8,
+      "invoice_threshold": 0.6,
       "name_threshold": 0.8,
-      "rare_share": 0.05
+      "rare_share": 0.1
     }
   },
   "synthetic": true,
@@ -395,53 +411,59 @@
   "tuned_rules": {
     "duplicate_fuzzy": {
       "anomaly_type": "near_duplicate_payment",
-      "cost_flag_everything_per_seed": 660.0,
-      "cost_flag_nothing_per_seed": 2400.0,
-      "cost_per_seed": 60.0,
-      "f1": 1.0,
+      "cost_flag_everything_per_seed": 940.0,
+      "cost_flag_nothing_per_seed": 4000.0,
+      "cost_per_seed": 240.0,
+      "f1": 0.5882,
       "f1_ci": [
-        1.0,
-        1.0
+        0.5556,
+        0.625
       ],
-      "false_positives": 0,
-      "flags": 9,
-      "labeled": 9,
+      "false_positives": 21,
+      "flags": 36,
+      "labeled": 15,
       "miss_cost": 800.0,
       "misses": 0,
       "other_label": 0,
-      "precision": 1.0,
+      "precision": 0.4167,
       "precision_ci": [
-        1.0,
-        1.0
+        0.3846,
+        0.4545
       ],
       "recall": 1.0,
       "recall_ci": [
         1.0,
         1.0
       ],
-      "true_positives": 9
+      "true_positives": 15
     },
     "rare_poster": {
       "anomaly_type": "unusual_user",
-      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_everything_per_seed": 4053.3333,
       "cost_flag_nothing_per_seed": 300.0,
-      "cost_per_seed": 300.0,
-      "f1": null,
-      "f1_ci": null,
-      "false_positives": 0,
-      "flags": 0,
+      "cost_per_seed": 80.0,
+      "f1": 0.6667,
+      "f1_ci": [
+        0.6667,
+        0.6667
+      ],
+      "false_positives": 6,
+      "flags": 12,
       "labeled": 6,
       "miss_cost": 150.0,
-      "misses": 6,
+      "misses": 0,
       "other_label": 0,
-      "precision": null,
-      "precision_ci": null,
-      "recall": 0.0,
-      "recall_ci": [
-        0.0,
-        0.0
+      "precision": 0.5,
+      "precision_ci": [
+        0.5,
+        0.5
       ],
-      "true_positives": 0
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 6
     }
   }
 }
