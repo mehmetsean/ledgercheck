@@ -669,6 +669,8 @@ def evaluate_folder(
 
 
 def load_costs(path: Path) -> CostTable:
+    if not _safe_file(path, 1_000_000):
+        raise ValueError(f"{plain(path.name)}: no such file")
     try:
         data = json.loads(path.read_text("utf-8"))
     except (ValueError, RecursionError):
