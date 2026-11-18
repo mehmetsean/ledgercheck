@@ -216,3 +216,12 @@ def test_prepare_folder_empties_it(tmp_path: Path) -> None:
     assert folder.is_dir() and list(folder.iterdir()) == []
     demo.prepare_folder(str(tmp_path / "new"))
     assert (tmp_path / "new").is_dir()
+
+
+def test_table_fields_match_the_reader() -> None:
+    from ledgercheck.io import SPECS
+
+    fields = demo.table_fields()
+    assert list(fields) == list(SPECS)
+    assert fields["vendors"] == ["vendor_id", "vendor_name"]
+    assert "amount_cents" in fields["ap_payments"]

@@ -243,3 +243,8 @@ def run_files(
     out = _common(result, "files")
     out["items"] = [_item(f, "to_check") for f in result.flags]
     return out
+
+
+def table_fields() -> dict[str, list[str]]:
+    """The tables and the columns each one needs, for the mapping form."""
+    return {table: [field for field, _ in spec] for table, spec in SPECS.items()}
