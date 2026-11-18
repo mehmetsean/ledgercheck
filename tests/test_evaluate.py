@@ -241,8 +241,19 @@ def test_load_costs_errors(tmp_path: Path, body: str):
 
 
 def test_load_costs_missing_file(tmp_path: Path):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="no such file"):
         ev.load_costs(tmp_path / "none.json")
+
+
+def test_load_costs_refuses_big_files_and_links(tmp_path: Path):
+    big = tmp_path / "big.json"
+    big.write_text(" " * 1_000_001)
+    with pytest.raises(ValueError, match="larger than"):
+        ev.load_costs(big)
+    link = tmp_path / "link.json"
+    link.symlink_to(big)
+    with pytest.raises(ValueError, match="symbolic link"):
+        ev.load_costs(link)
 
 
 def test_read_labels_and_errors(tmp_path: Path):
@@ -290,13 +301,14 @@ def test_lookup_is_built_once_per_score(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_bootstrap_percentile_indexes_on_a_small_draw_set():
-    per_seed = [(1, 0, 0), (10, 0, 0), (100, 0, 0)]
+    per_seed = [(1, 0, 0), (2, 0, 0), (4, 0, 0), (8, 0, 0), (16, 0, 0)]
     draws, seed = 40, 1
     rng = random.Random(seed)
     sums = sorted(
-        sum(per_seed[rng.randrange(3)][0] for _ in range(3)) for _ in range(draws)
+        sum(per_seed[rng.randrange(5)][0] for _ in range(5)) for _ in range(draws)
     )
-    assert sums[0] != sums[1] and sums[38] != sums[39]
+    assert len({sums[0], sums[1], sums[2]}) == 3
+    assert len({sums[37], sums[38], sums[39]}) == 3
     got = ev.bootstrap(per_seed, lambda tp, fp, m: float(tp), draws=draws, seed=seed)
     assert got == (sums[0], sums[38])
 
