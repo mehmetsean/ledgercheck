@@ -191,6 +191,21 @@ def unnumbered_count(entries: dict[str, list[JournalLine]]) -> int:
     return sum(1 for je_id in entries if NUMBERED.fullmatch(je_id) is None)
 
 
+def shared_number_count(entries: dict[str, list[JournalLine]]) -> int:
+    """Ids that share a prefix and a number with another id, such as JE-1 and JE-001."""
+    seen: set[tuple[str, int]] = set()
+    shared = 0
+    for je_id in entries:
+        match = NUMBERED.fullmatch(je_id)
+        if match is None:
+            continue
+        key = (match.group(1), int(match.group(2)))
+        if key in seen:
+            shared += 1
+        seen.add(key)
+    return shared
+
+
 def gap_flags(entries: dict[str, list[JournalLine]]) -> list[Flag]:
     """Missing numbers in the je_id sequence.
 
