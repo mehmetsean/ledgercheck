@@ -15,9 +15,12 @@ from .eval_report import (
 from .evaluate import (
     DEFAULT_COSTS,
     DEFAULT_RATE,
+    MAX_REPORT_SEEDS,
+    MAX_TUNE_SEEDS,
     CostTable,
     EvalParams,
     EvalReport,
+    check_work,
     evaluate_folder,
     evaluate_seeds,
     load_costs,
@@ -27,7 +30,13 @@ from .evaluate import (
 )
 from .io import plain, read_folder
 from .models import Settings
-from .report import check_existing, check_out_folder, write_report
+from .report import (
+    DISCLAIMER,
+    NOTICE,
+    check_existing,
+    check_out_folder,
+    write_report,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -102,12 +111,13 @@ def _evaluate_seeds(args: argparse.Namespace, costs: CostTable) -> None:
         raise ValueError("--size: use small, medium or large")
     tune_text = args.tune_seeds or "1-10"
     seeds_text = args.seeds or "101-130"
-    tune = parse_seeds(tune_text, "--tune-seeds")
-    seeds = parse_seeds(seeds_text, "--seeds")
+    tune = parse_seeds(tune_text, "--tune-seeds", MAX_TUNE_SEEDS)
+    seeds = parse_seeds(seeds_text, "--seeds", MAX_REPORT_SEEDS)
     if set(tune) & set(seeds):
         raise ValueError("--tune-seeds and --seeds must not share a seed")
     rate = _rate(args.rate) if args.rate is not None else DEFAULT_RATE
     months = _whole(args.months or "12", "--months", max_months())
+    check_work(tune, seeds, months)
     check_existing(args.out, args.force, EVAL_FILES)
     params = EvalParams(size, months, rate)
     report = evaluate_seeds(tune, seeds, params, costs)
@@ -115,9 +125,12 @@ def _evaluate_seeds(args: argparse.Namespace, costs: CostTable) -> None:
         f"ledgercheck evaluate --size {size} --months {months} "
         f"--tune-seeds {tune_text} --seeds {seeds_text} --rate {rate:g}"
     )
+    if args.costs:
+        command += f" --costs {plain(str(args.costs))[:200]}"
     write_eval_report(args.out, metrics_dict(report, command), args.force)
     print(f"Wrote the evaluation to {plain(str(args.out))}, {len(report.rules)} rules")
     print(f"Settings chosen on the tuning seeds: {_chosen(report)}")
+    print(f"\n{NOTICE}\n\n{DISCLAIMER}")
 
 
 def _chosen(report: EvalReport) -> str:

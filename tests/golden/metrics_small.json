@@ -376,13 +376,72 @@
     }
   },
   "settings": {
-    "invoice_threshold": 0.6,
-    "name_threshold": 0.6,
-    "rare_share": 0.05
+    "defaults": {
+      "invoice_threshold": 0.8,
+      "name_threshold": 0.8,
+      "rare_share": 0.05
+    },
+    "tuned": {
+      "invoice_threshold": 0.8,
+      "name_threshold": 0.8,
+      "rare_share": 0.05
+    }
   },
   "synthetic": true,
   "tune_seeds": [
     1,
     2
-  ]
+  ],
+  "tuned_rules": {
+    "duplicate_fuzzy": {
+      "anomaly_type": "near_duplicate_payment",
+      "cost_flag_everything_per_seed": 660.0,
+      "cost_flag_nothing_per_seed": 2400.0,
+      "cost_per_seed": 60.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 9,
+      "labeled": 9,
+      "miss_cost": 800.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 9
+    },
+    "rare_poster": {
+      "anomaly_type": "unusual_user",
+      "cost_flag_everything_per_seed": 3026.6667,
+      "cost_flag_nothing_per_seed": 300.0,
+      "cost_per_seed": 300.0,
+      "f1": null,
+      "f1_ci": null,
+      "false_positives": 0,
+      "flags": 0,
+      "labeled": 6,
+      "miss_cost": 150.0,
+      "misses": 6,
+      "other_label": 0,
+      "precision": null,
+      "precision_ci": null,
+      "recall": 0.0,
+      "recall_ci": [
+        0.0,
+        0.0
+      ],
+      "true_positives": 0
+    }
+  }
 }

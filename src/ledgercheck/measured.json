@@ -64,12 +64,12 @@
       ]
     },
     "unusual_user": {
-      "caught": 870,
+      "caught": 209,
       "labeled": 870,
-      "recall": 1.0,
+      "recall": 0.2402,
       "recall_ci": [
-        1.0,
-        1.0
+        0.1724,
+        0.308
       ]
     },
     "weekend_posting": {
@@ -312,29 +312,29 @@
       "anomaly_type": "unusual_user",
       "cost_flag_everything_per_seed": 102397.3333,
       "cost_flag_nothing_per_seed": 4350.0,
-      "cost_per_seed": 580.0,
-      "f1": 1.0,
+      "cost_per_seed": 3444.3333,
+      "f1": 0.3874,
       "f1_ci": [
-        1.0,
-        1.0
+        0.2941,
+        0.471
       ],
       "false_positives": 0,
-      "flags": 870,
+      "flags": 209,
       "labeled": 870,
       "miss_cost": 150.0,
-      "misses": 0,
+      "misses": 661,
       "other_label": 0,
       "precision": 1.0,
       "precision_ci": [
         1.0,
         1.0
       ],
-      "recall": 1.0,
+      "recall": 0.2402,
       "recall_ci": [
-        1.0,
-        1.0
+        0.1724,
+        0.308
       ],
-      "true_positives": 870
+      "true_positives": 209
     },
     "round_amount": {
       "anomaly_type": "round_amount_entry",
@@ -422,9 +422,16 @@
     }
   },
   "settings": {
-    "invoice_threshold": 0.6,
-    "name_threshold": 0.6,
-    "rare_share": 0.1
+    "defaults": {
+      "invoice_threshold": 0.8,
+      "name_threshold": 0.8,
+      "rare_share": 0.05
+    },
+    "tuned": {
+      "invoice_threshold": 0.8,
+      "name_threshold": 0.8,
+      "rare_share": 0.1
+    }
   },
   "synthetic": true,
   "tune_seeds": [
@@ -438,5 +445,63 @@
     8,
     9,
     10
-  ]
+  ],
+  "tuned_rules": {
+    "duplicate_fuzzy": {
+      "anomaly_type": "near_duplicate_payment",
+      "cost_flag_everything_per_seed": 25850.6667,
+      "cost_flag_nothing_per_seed": 23200.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 800.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    },
+    "rare_poster": {
+      "anomaly_type": "unusual_user",
+      "cost_flag_everything_per_seed": 102397.3333,
+      "cost_flag_nothing_per_seed": 4350.0,
+      "cost_per_seed": 580.0,
+      "f1": 1.0,
+      "f1_ci": [
+        1.0,
+        1.0
+      ],
+      "false_positives": 0,
+      "flags": 870,
+      "labeled": 870,
+      "miss_cost": 150.0,
+      "misses": 0,
+      "other_label": 0,
+      "precision": 1.0,
+      "precision_ci": [
+        1.0,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci": [
+        1.0,
+        1.0
+      ],
+      "true_positives": 870
+    }
+  }
 }

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .duplicates import find_duplicates
-from .io import MAX_ROWS_PER_FILE, plain
+from .io import MAX_FILE_BYTES, MAX_ROWS_PER_FILE, plain, read_folder
 from .models import (
     DuplicateSettings,
     Flag,
@@ -48,7 +48,11 @@ PAYMENTS = "ap_payments"
 
 DRAWS = 2000
 BOOTSTRAP_SEED = 20261117
-MAX_SEEDS = 1000
+MAX_TUNE_SEEDS = 50
+MAX_REPORT_SEEDS = 200
+MAX_WORK = 6000
+MAX_MANIFEST_BYTES = 1_000_000
+TUNED_RULES = ("rare_poster", "duplicate_fuzzy")
 DEFAULT_RATE = 0.02
 INSTALL_HINT = (
     'synthbiz is not installed, install the eval extra: pip install "ledgercheck[eval]"'
@@ -118,6 +122,9 @@ class Scores:
     any_rule: dict[str, AnyRule]
 
 
+DEFAULT_SETTINGS = Settings()
+
+
 @dataclass(frozen=True)
 class Grid:
     name_thresholds: tuple[float, ...]
@@ -178,8 +185,10 @@ class EvalReport:
     report_seeds: tuple[int, ...]
     settings: Settings
     rules: dict[str, RulePooled]
+    tuned_rules: dict[str, RulePooled]
     any_rule: dict[str, AnyPooled]
     mean_labels: float
+    default_settings: Settings = DEFAULT_SETTINGS
     tune_cost: float = 0.0
     seed_scores: list[Scores] = field(default_factory=list)
 
@@ -202,9 +211,20 @@ def _csv_error(name: str, message: str) -> ValueError:
     return ValueError(f"{name}: {message}")
 
 
+def _safe_file(path: Path, cap: int) -> bool:
+    """True if the file exists and may be read. Symlinks and big files fail."""
+    if path.is_symlink():
+        raise ValueError(f"{path.name}: is a symbolic link, not read")
+    if not path.is_file():
+        return False
+    if path.stat().st_size > cap:
+        raise ValueError(f"{path.name}: file is larger than {cap} bytes")
+    return True
+
+
 def read_labels(folder: Path) -> list[Label]:
     path = folder / "labels.csv"
-    if not path.is_file():
+    if not _safe_file(path, MAX_FILE_BYTES):
         raise ValueError(f"no labels.csv in {plain(str(folder))}")
     out: list[Label] = []
     try:
@@ -229,12 +249,13 @@ def read_labels(folder: Path) -> list[Label]:
 def read_manifest_info(folder: Path) -> dict[str, str] | None:
     """Seed, size, months and rate for display. None if there is no manifest."""
     path = folder / "manifest.json"
-    if not path.is_file():
+    if not _safe_file(path, MAX_MANIFEST_BYTES):
         return None
     try:
         params = json.loads(path.read_text("utf-8"))["parameters"]
         return {
-            k: str(params[k])[:40] for k in ("seed", "size", "months", "anomaly_rate")
+            k: plain(str(params[k]))[:40]
+            for k in ("seed", "size", "months", "anomaly_rate")
         }
     except (ValueError, KeyError, TypeError, RecursionError, OSError):
         raise ValueError("manifest.json could not be read") from None
@@ -287,33 +308,39 @@ def ledger_from_dataset(tables: dict[str, list[dict[str, Any]]]) -> Ledger:
     return Ledger(lines, invoices, payments, vendors)
 
 
-def _label_unit(
-    label: Label, je_of_line: dict[str, str], ledger: Ledger
-) -> Unit | None:
+KIND = {JOURNAL: "journal line", INVOICES: "invoice", PAYMENTS: "payment"}
+
+
+def _lookup(ledger: Ledger) -> dict[str, dict[str, str]]:
+    """Per loaded table: row id to scoring unit id. Built once per score."""
+    out: dict[str, dict[str, str]] = {}
+    if ledger.journal_lines is not None:
+        out[JOURNAL] = {x.line_id: x.je_id for x in ledger.journal_lines}
+    if ledger.invoices is not None:
+        out[INVOICES] = {x.invoice_id: x.invoice_id for x in ledger.invoices}
+    if ledger.payments is not None:
+        out[PAYMENTS] = {x.payment_id: x.payment_id for x in ledger.payments}
+    return out
+
+
+def _label_unit(label: Label, lookup: dict[str, dict[str, str]]) -> Unit | None:
     """The scoring unit a label points to. None if its table is not loaded."""
-    if label.table == JOURNAL and ledger.journal_lines is not None:
-        if label.row_id not in je_of_line:
-            raise ValueError("labels.csv names a journal line that is not in the data")
-        return (JOURNAL, je_of_line[label.row_id])
-    if label.table == INVOICES and ledger.invoices is not None:
-        if label.row_id not in {x.invoice_id for x in ledger.invoices}:
-            raise ValueError("labels.csv names an invoice that is not in the data")
-        return (INVOICES, label.row_id)
-    if label.table == PAYMENTS and ledger.payments is not None:
-        if label.row_id not in {x.payment_id for x in ledger.payments}:
-            raise ValueError("labels.csv names a payment that is not in the data")
-        return (PAYMENTS, label.row_id)
-    return None
+    ids = lookup.get(label.table)
+    if ids is None:
+        return None
+    if label.row_id not in ids:
+        raise ValueError(f"labels.csv names a {KIND[label.table]} not in the data")
+    return (label.table, ids[label.row_id])
 
 
 def _labeled_units(
     labels: Sequence[Label], ledger: Ledger
 ) -> tuple[dict[str, set[Unit]], dict[Unit, list[str]]]:
-    je_of_line = {x.line_id: x.je_id for x in ledger.journal_lines or ()}
+    lookup = _lookup(ledger)
     by_type: dict[str, set[Unit]] = {}
     details: dict[Unit, list[str]] = {}
     for label in labels:
-        unit = _label_unit(label, je_of_line, ledger)
+        unit = _label_unit(label, lookup)
         if unit is None:
             continue
         by_type.setdefault(label.anomaly_type, set()).add(unit)
@@ -340,6 +367,9 @@ def score(
     ledger: Ledger,
     costs: CostTable,
 ) -> Scores:
+    """Score flags per rule. any_rule counts a labeled unit as caught when a flag
+    from any scored rule lands on it. entry_number_gap and benford are not scored.
+    """
     by_type, details = _labeled_units(labels, ledger)
     skipped = skip_reasons(ledger)
     totals: dict[str, int] = {}
@@ -526,6 +556,10 @@ def _rule_cost(flags: list[Flag], data: SeedData, costs: CostTable, rule: str) -
     return score(flags, data.labels, data.ledger, costs).rules[rule].cost
 
 
+def _default_first(default: float, values: Sequence[float]) -> list[float]:
+    return [default] + [v for v in values if v != default]
+
+
 def tune(
     seeds: Sequence[SeedData], costs: CostTable, grid: Grid
 ) -> tuple[Settings, float]:
@@ -533,11 +567,16 @@ def tune(
 
     Costs add up per rule, and each setting changes one rule only: the two
     thresholds change duplicate_fuzzy, rare_share changes rare_poster. So the
-    best point of the full grid is the best value of each part.
+    best point of the full grid is the best value of each part. The run
+    default is tried first, and another value wins only with a strictly
+    lower cost.
     """
-    best_dup = (math.inf, grid.name_thresholds[0], grid.invoice_thresholds[0])
-    for name in grid.name_thresholds:
-        for inv in grid.invoice_thresholds:
+    default_dup = DEFAULT_SETTINGS.duplicates
+    names = _default_first(default_dup.name_threshold, grid.name_thresholds)
+    invoices = _default_first(default_dup.invoice_threshold, grid.invoice_thresholds)
+    best_dup = (math.inf, names[0], invoices[0])
+    for name in names:
+        for inv in invoices:
             dup = DuplicateSettings(name_threshold=name, invoice_threshold=inv)
             total = 0.0
             for d in seeds:
@@ -545,8 +584,9 @@ def tune(
                 total += _rule_cost(flags, d, costs, "duplicate_fuzzy")
             if total < best_dup[0]:
                 best_dup = (total, name, inv)
-    best_rare = (math.inf, grid.rare_shares[0])
-    for share in grid.rare_shares:
+    shares = _default_first(DEFAULT_SETTINGS.rare_share, grid.rare_shares)
+    best_rare = (math.inf, shares[0])
+    for share in shares:
         total = 0.0
         for d in seeds:
             lines = d.ledger.journal_lines or ()
@@ -558,6 +598,19 @@ def tune(
     return chosen, best_dup[0] + best_rare[0]
 
 
+def check_work(
+    tune_seeds: Sequence[int], report_seeds: Sequence[int], months: int
+) -> None:
+    if len(tune_seeds) > MAX_TUNE_SEEDS:
+        raise ValueError(f"--tune-seeds: at most {MAX_TUNE_SEEDS} seeds")
+    if len(report_seeds) > MAX_REPORT_SEEDS:
+        raise ValueError(f"--seeds: at most {MAX_REPORT_SEEDS} seeds")
+    if (len(tune_seeds) + len(report_seeds)) * months > MAX_WORK:
+        raise ValueError(
+            f"seeds times months is more than {MAX_WORK}, use fewer seeds or months"
+        )
+
+
 def evaluate_seeds(
     tune_seeds: Sequence[int],
     report_seeds: Sequence[int],
@@ -567,22 +620,29 @@ def evaluate_seeds(
 ) -> EvalReport:
     if params.months > max_months():
         raise ValueError(f"months must be at most {max_months()}")
+    check_work(tune_seeds, report_seeds, params.months)
     tuning = [make_seed(s, params) for s in tune_seeds]
     settings, tune_cost = tune(tuning, costs, grid)
-    seed_scores = []
+    default_scores: list[Scores] = []
+    tuned_scores: list[Scores] = []
     label_total = 0
     for seed in report_seeds:
         data = make_seed(seed, params)
-        flags = all_flags(data.ledger, settings)
-        seed_scores.append(score(flags, data.labels, data.ledger, costs))
+        for use, out in ((DEFAULT_SETTINGS, default_scores), (settings, tuned_scores)):
+            flags = all_flags(data.ledger, use)
+            out.append(score(flags, data.labels, data.ledger, costs))
         label_total += len(data.labels)
     rules = {
-        rule: _pool_rule(rule, [s.rules[rule] for s in seed_scores])
-        for rule in seed_scores[0].rules
+        rule: _pool_rule(rule, [s.rules[rule] for s in default_scores])
+        for rule in default_scores[0].rules
+    }
+    tuned_rules = {
+        rule: _pool_rule(rule, [s.rules[rule] for s in tuned_scores])
+        for rule in TUNED_RULES
     }
     any_rule = {
-        kind: _pool_any([s.any_rule[kind] for s in seed_scores])
-        for kind in seed_scores[0].any_rule
+        kind: _pool_any([s.any_rule[kind] for s in default_scores])
+        for kind in default_scores[0].any_rule
     }
     return EvalReport(
         params=params,
@@ -592,18 +652,17 @@ def evaluate_seeds(
         report_seeds=tuple(report_seeds),
         settings=settings,
         rules=rules,
+        tuned_rules=tuned_rules,
         any_rule=any_rule,
         mean_labels=label_total / len(report_seeds),
         tune_cost=tune_cost,
-        seed_scores=seed_scores,
+        seed_scores=default_scores,
     )
 
 
 def evaluate_folder(
     folder: Path, settings: Settings, costs: CostTable
 ) -> tuple[Scores, int]:
-    from .io import read_folder
-
     ledger = read_folder(folder)
     labels = read_labels(folder)
     return score(all_flags(ledger, settings), labels, ledger, costs), len(labels)
@@ -639,8 +698,8 @@ def _cost(value: Any, name: str) -> float:
     return float(value)
 
 
-def parse_seeds(text: str, name: str) -> tuple[int, ...]:
-    """Seeds like 1-10 or 3,5,101-130. At most 1,000 of them."""
+def parse_seeds(text: str, name: str, limit: int) -> tuple[int, ...]:
+    """Seeds like 1-10 or 3,5,101-130, at most limit of them."""
     seeds: list[int] = []
     for part in text.split(","):
         low, dash, high = part.strip().partition("-")
@@ -649,8 +708,8 @@ def parse_seeds(text: str, name: str) -> tuple[int, ...]:
         first, last = int(low), int(high or low)
         if last < first:
             raise ValueError(f"{name}: range {part.strip()} runs backwards")
-        if len(seeds) + last - first + 1 > MAX_SEEDS:
-            raise ValueError(f"{name}: at most {MAX_SEEDS} seeds")
+        if len(seeds) + last - first + 1 > limit:
+            raise ValueError(f"{name}: at most {limit} seeds")
         seeds.extend(range(first, last + 1))
     if len(set(seeds)) != len(seeds):
         raise ValueError(f"{name}: a seed is listed twice")
