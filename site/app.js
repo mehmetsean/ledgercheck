@@ -3,7 +3,8 @@
 const WORK = "/work";
 const INPUT = WORK + "/in";
 const DEFAULT_MAX_BYTES = 150000000;
-const MAX_TOTAL_BYTES = Number(new URLSearchParams(location.search).get("maxbytes")) || DEFAULT_MAX_BYTES;
+const asked = Number(new URLSearchParams(location.search).get("maxbytes"));
+const MAX_TOTAL_BYTES = Number.isFinite(asked) && asked > 0 ? Math.min(asked, DEFAULT_MAX_BYTES) : DEFAULT_MAX_BYTES;
 const MAX_ROWS_SHOWN = 200;
 const WHEEL_NAME = /^[A-Za-z0-9_.+-]+\.whl$/;
 const MARKS = {
@@ -376,7 +377,7 @@ async function onFiles() {
   const bad = names.find((n) => n.includes("/") || n.includes("\\"));
   if (bad) {
     chosen = [];
-    setStatus("Error: the file name " + JSON.stringify(bad) + " has a slash in it. Rename the file and choose it again.");
+    setStatus("Error: the file name " + JSON.stringify(bad) + " has a slash or a backslash in it. Rename the file and choose it again.");
     return;
   }
   const twice = names.find((n, i) => names.indexOf(n) !== i);

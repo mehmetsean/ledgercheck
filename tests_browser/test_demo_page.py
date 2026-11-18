@@ -200,3 +200,28 @@ def test_no_phone_overflow(page: Any) -> None:
 def test_no_request_left_the_origin_and_no_errors(watch: Watch, page: Any) -> None:
     assert watch.hosts == set()
     assert watch.errors == []
+
+
+def test_a_raised_maxbytes_cannot_lift_the_cap(page: Any) -> None:
+    raised = page.context.new_page()
+    raised.goto(URL + "?maxbytes=99999999999")
+    raised.wait_for_function(
+        "!document.getElementById('run-synthetic').disabled", timeout=LOAD_MS
+    )
+    raised.check("#mode-files")
+    raised.evaluate(
+        """() => {
+          const file = new File([new ArrayBuffer(151000000)], "huge.csv");
+          const box = new DataTransfer();
+          box.items.add(file);
+          const input = document.getElementById("file-input");
+          input.files = box.files;
+          input.dispatchEvent(new Event("change"));
+        }"""
+    )
+    raised.wait_for_function(
+        "document.getElementById('status').textContent.includes('150 MB')",
+        timeout=30_000,
+    )
+    assert raised.is_disabled("#run-files")
+    raised.close()

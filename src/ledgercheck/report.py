@@ -168,7 +168,10 @@ def markdown(result: AnalysisResult) -> str:
     out += ["", _dup_line(result), ""] + _measured_markdown()
     out += ["## Benford first digit", ""]
     if not result.benford:
-        out += ["SKIP: no amount field in the input.", ""]
+        out += [
+            "SKIP: no amount field in the input. Add an amount column and run again.",
+            "",
+        ]
     for b in result.benford:
         out += [benford_head(b), ""]
         out += ["| Digit | Count | Share | Expected |", "| --- | --- | --- | --- |"]
@@ -205,7 +208,10 @@ def page(result: AnalysisResult) -> str:
         "<h2>Benford first digit</h2>",
     ]
     if not result.benford:
-        body.append("<p>SKIP: no amount field in the input.</p>")
+        body.append(
+            "<p>SKIP: no amount field in the input. "
+            "Add an amount column and run again.</p>"
+        )
     for b in result.benford:
         body.append(f"<p>{h(benford_head(b))}</p>")
         body.append(html_table(["Digit", "Count", "Share", "Expected"], _digit_rows(b)))

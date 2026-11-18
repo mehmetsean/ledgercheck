@@ -281,8 +281,14 @@ def test_empty_benford_section_is_written(tmp_path: Path) -> None:
     empty = AnalysisResult(
         result.flags, result.counts, result.skips, [], result.table_rows, 0, 0
     )
-    assert "SKIP: no amount field in the input." in report.markdown(empty)
-    assert "SKIP: no amount field in the input." in report.page(empty)
+    assert (
+        "SKIP: no amount field in the input. Add an amount column and run again."
+        in report.markdown(empty)
+    )
+    assert (
+        "SKIP: no amount field in the input. Add an amount column and run again."
+        in report.page(empty)
+    )
 
 
 def test_report_lists_skipped_entry_ids() -> None:

@@ -15,7 +15,7 @@ scripts/build_site.py builds _site/ and nothing from Pyodide is committed. The s
 - downloads pyodide-core-314.0.8.tar.bz2 from the official Pyodide GitHub release into a gitignored cache folder,
 - checks its sha256 against a constant in the script and stops on a mismatch,
 - reads five files out of the archive by their exact path inside it, pyodide/<name> (pyodide.js, pyodide.asm.mjs, pyodide.asm.wasm, python_stdlib.zip, pyodide-lock.json) and writes them as plain bytes,
-- checks that pyodide.js has the expected sha384 before any file is written. The sha384 was compared with the jsdelivr SRI for v314.0.8 on 2026-11-17. The repo pins both hashes but does not re-check the jsdelivr source. The sha256 is pinned from the official GitHub release download on that date,
+- checks that pyodide.js has the expected sha384 before any file is written. The sha384 matches the jsdelivr SRI for v314.0.8. The repo pins both hashes but does not re-check the jsdelivr source. The sha256 is pinned from the official GitHub release download,
 - builds the ledgercheck wheel and the synthbiz wheel from the commit pinned in pyproject.toml, with SOURCE_DATE_EPOCH set. The build backend of ledgercheck is pinned (hatchling==1.33.0). The Pyodide files are hash-pinned. The wheels are not, because they are built from source at each run,
 - writes manifest.json with the wheel file names for the page.
 
@@ -23,7 +23,7 @@ Nothing from the download is run. It is hashed, read and copied.
 
 The CSP is default-src 'none', script-src 'self' with 'wasm-unsafe-eval' and 'unsafe-eval', connect-src 'self', style-src 'self', img-src 'self' data:, base-uri 'none' and form-action 'none'. Both script keywords are in the CSP. WebAssembly needs 'wasm-unsafe-eval'. Removing 'unsafe-eval' needs a passing run of the browser test in tests_browser first. There is no worker, so no worker-src.
 
-A meta CSP cannot set frame-ancestors, and GitHub Pages cannot set response headers, so the page can be framed by another site. The page holds no account or session, so the clickjacking risk is low. The CSP makes no background request to any other host. Links you click still open. GitHub Pages sees the normal page request (IP address, browser), as any web host does, and never your files.
+A meta CSP cannot set frame-ancestors, and GitHub Pages cannot set response headers, so the page can be framed by another site. The page has no login and sets no cookies. A framed copy cannot read your files or the results, but framing is a known limit. The CSP blocks any background request to another host. Links you click still open. GitHub Pages sees the normal page request (IP address, browser), as any web host does, and never your files.
 
 Options considered:
 

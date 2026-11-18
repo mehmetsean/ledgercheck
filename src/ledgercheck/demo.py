@@ -225,9 +225,7 @@ def run_files(
         cmap = load_column_map(map_path)
     for spec in tables.values():
         if not (Path(folder) / spec["file"]).is_file():
-            raise ValueError(
-                f"{plain(str(spec['file']))}: file not found, choose it again"
-            )
+            raise ValueError(f"{plain(str(spec['file']))}: file not found")
     ledger = read_folder(Path(folder), cmap)
     result = analyze(ledger, Settings())
     out = _common(result, "files")
