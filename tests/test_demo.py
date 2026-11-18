@@ -192,8 +192,9 @@ def test_files_mode_errors_say_what_to_do(tmp_path: Path) -> None:
         demo.run_files(str(folder), {"vendors": {"columns": {}}})
     with pytest.raises(ValueError, match="file not found"):
         demo.run_files(str(folder), {"vendors": {"file": "gone.csv", "columns": {}}})
+    write(folder / "v.csv", ["vendor_id", "vendor_name"], [["V1", "Acme"]])
     with pytest.raises(ValueError, match="no table files"):
-        demo.run_files(str(folder), {"vendors": {"file": "a.csv", "columns": {}}})
+        demo.run_files(str(folder), {"vendors": {"file": "v.csv", "columns": {}}})
     with pytest.raises(ValueError, match="date_format"):
         demo.run_files(str(folder), identity(folder), date_format="nope")
 
