@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ledgercheck"
+version = "0.1.0"
+description = "Journal entry and duplicate payment checks that run on your own machine."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "ruff",
+    "mypy",
+    "synthbiz @ git+https://github.com/mehmetsean/synthbiz@v0.1.2",
+]
+
+[project.scripts]
+ledgercheck = "ledgercheck.cli:main"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ledgercheck"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=ledgercheck --cov-report=term-missing --cov-fail-under=90"
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
