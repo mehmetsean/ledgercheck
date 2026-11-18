@@ -72,8 +72,9 @@ def count_note(data: dict[str, Any]) -> str:
     total = r["true_positives"] + r["false_positives"]
     return (
         f"Flags and counts are summed over the {seeds} report seeds. Precision is "
-        "true positives over true plus false positives, counted per labeled unit, "
-        "so one flag that covers several units makes Flags differ from that sum. "
+        "true positives over true plus false positives. True positives are counted "
+        "per labeled unit and false positives per flag, so Flags can be lower than "
+        "that sum when one flag covers several units. "
         f"split_under_limit is the example: {r['flags']} flags, "
         f"{r['true_positives']} true positives plus {r['false_positives']} false "
         f"positives is {total}."
@@ -159,7 +160,8 @@ def benchmark_lines() -> list[str]:
         "Rows are copied from docs/benchmark.md and this script does not rerun "
         "them. Times are from one machine, see that file for the machine. A test "
         "reruns the exact key and blocked methods on 12 months and checks their "
-        "compare counts and near duplicate recall against that file."
+        "near duplicate counts and recall against that file. It also checks the "
+        "blocked compare count."
     )
     for sec in parse_benchmark(BENCHMARK.read_text("utf-8")):
         lines += ["", f"{sec.title}:", ""]
@@ -183,8 +185,8 @@ def example_lines() -> list[str]:
         "### Example folders",
         "",
         "examples/ holds synthbiz seed 42, size small, 12 months, and the "
-        f"analysis of it. The data has {labels} planted anomalies. The analysis "
-        f"lists {sum(counts.values())} items to check:",
+        f"analysis of it. The synthetic data has {labels} planted anomalies. "
+        f"The analysis lists {sum(counts.values())} items to check:",
         "",
         *count_lines(counts),
     ]

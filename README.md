@@ -35,7 +35,7 @@ source .venv/bin/activate
 pip install -e ".[eval]"
 ```
 
-On Windows, run .venv\Scripts\activate instead.
+On Windows, run `.venv\Scripts\activate` instead.
 
 3. Make synthetic data and run the rules on it.
 
@@ -68,7 +68,7 @@ The approval limit, the round step, the windows and the thresholds are settings.
 
 ## Check the numbers
 
-Most numbers in this README are in the numbers block below. The others are fixed facts that tests/test_readme_facts.py checks. Run these from the repo root after `pip install -e ".[eval]"`.
+Most numbers in this README are in the numbers block below. Caps, limits, the Python version, the pinned commit and the benchmark figures are checked by tests/test_readme_facts.py. Run these from the repo root after `pip install -e ".[eval]"`.
 
 ```
 python scripts/reproduce_readme.py --check
@@ -102,7 +102,7 @@ The first form scores one labeled folder. The second generates each seed in memo
 - round_amount and split_under_limit show false alarms on synthbiz. The clean ledger section of the numbers block shows how many items each rule flags when nothing is planted.
 - rare_poster at its default rare_share misses most planted anomalies. The tuned row uses a higher rare_share. Both recalls are in the numbers block.
 - Limit: synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos. The generator is `_near_duplicate` in src/synthbiz/anomalies.py of synthbiz at commit 47a763a79681805e7dcb992c7d47e5166a83aa09, the commit pinned in pyproject.toml.
-- "Caught by any scored rule" counts a labeled unit as caught when a flag from any of the nine scored rules lands on it. entry_number_gap and benford_first_digit are not scored.
+- "Caught by any scored rule" (shown in the evaluation report) counts a labeled unit as caught when a flag from any of the nine scored rules lands on it. entry_number_gap and benford_first_digit are not scored.
 
 To see which rules flag anything on a clean ledger (synthbiz with a planted rate of 0), run these two commands, then open /tmp/clean_ledger_out/analysis.md and read the "Items to check per rule" table.
 
@@ -132,7 +132,7 @@ Command: `ledgercheck evaluate --size large --months 12 --tune-seeds 1-10 --seed
 | split_under_limit | 1686 | 0.5130 | 1.0000 |
 | weekend_posting | 870 | 1.0000 | 1.0000 |
 
-Flags and counts are summed over the 30 report seeds. Precision is true positives over true plus false positives, counted per labeled unit, so one flag that covers several units makes Flags differ from that sum. split_under_limit is the example: 1686 flags, 870 true positives plus 826 false positives is 1696.
+Flags and counts are summed over the 30 report seeds. Precision is true positives over true plus false positives. True positives are counted per labeled unit and false positives per flag, so Flags can be lower than that sum when one flag covers several units. split_under_limit is the example: 1686 flags, 870 true positives plus 826 false positives is 1696.
 
 Tuned rows (settings picked on the tuning seeds):
 
@@ -152,7 +152,7 @@ synthbiz with anomaly rate 0 and the default seed, then `ledgercheck run`. Items
 
 ### Duplicate search benchmark
 
-Rows are copied from docs/benchmark.md and this script does not rerun them. Times are from one machine, see that file for the machine. A test reruns the exact key and blocked methods on 12 months and checks their compare counts and near duplicate recall against that file.
+Rows are copied from docs/benchmark.md and this script does not rerun them. Times are from one machine, see that file for the machine. A test reruns the exact key and blocked methods on 12 months and checks their near duplicate counts and recall against that file. It also checks the blocked compare count.
 
 large, 12 months, 1,288 payments:
 
@@ -176,7 +176,7 @@ All-pairs matches that blocking leaves out: 87, of which 87 have a different amo
 
 ### Example folders
 
-examples/ holds synthbiz seed 42, size small, 12 months, and the analysis of it. The data has 6 planted anomalies. The analysis lists 9 items to check:
+examples/ holds synthbiz seed 42, size small, 12 months, and the analysis of it. The synthetic data has 6 planted anomalies. The analysis lists 9 items to check:
 
 - duplicate_exact: 1
 - duplicate_fuzzy: 1
@@ -193,7 +193,7 @@ After `pip install -e ".[eval]"`, `python benchmarks/bench.py` times exact-key m
 ## Limits
 
 - Measurements on synthetic data do not predict results on real books. Rates on real books will differ.
-- Blocked fuzzy duplicate search compares only payments with the same amount, so a near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 87 different-amount pairs, and none of them was planted. The benchmark scores one flag per later payment, so the same pairs show up as 80 near duplicate false positives in docs/benchmark.md. The numbers block lists the pair count for both sizes. The reason for blocking is speed, see docs/adr/0004-fuzzy-duplicates-are-blocked.md.
+- Blocked fuzzy duplicate search compares only payments with the same amount, so a near duplicate whose amount was changed is never found. On the 36 month benchmark all-pairs fuzzy found 87 different-amount pairs, and none of them was planted. The benchmark scores one flag per later payment, so the 87 pairs appear as 80 near duplicate false positives in docs/benchmark.md. The numbers block lists the pair count for both sizes. The reason for blocking is speed, see docs/adr/0004-fuzzy-duplicates-are-blocked.md.
 - synthbiz near duplicates differ only in vendor suffix or punctuation and keep the invoice number, so measured fuzzy recall says nothing about typos.
 - The holiday calendar is US federal holidays only, computed by rule. You can add dates in the settings file.
 - Input is CSV only. Parquet, Excel and direct ERP or bank connections are not supported.

@@ -8,7 +8,7 @@ The files this tool reads are a company's journal entries and payments. Sending 
 
 ## Decision
 
-The runtime has no dependencies, only the Python standard library (`dependencies = []` in pyproject.toml). The tool makes no network calls and has no server, accounts or upload. Files are read from a folder on the machine, and results are written to a folder on the machine. Tools that need other packages (synthbiz for data, pytest, hypothesis, ruff, mypy) are in the optional eval and dev extras and are not shipped.
+The runtime has no dependencies, only the Python standard library (`dependencies = []` in pyproject.toml). The tool makes no network calls and has no server, accounts or upload. tests/test_readme_facts.py checks that no module in src/ledgercheck imports socket, ssl, http, urllib, requests, ftplib or smtplib. That is an import check, not proof of no network access. Files are read from a folder on the machine, and results are written to a folder on the machine. Tools that need other packages (synthbiz for data, pytest, hypothesis, ruff, mypy) are in the optional eval and dev extras and are not shipped.
 
 Options considered:
 

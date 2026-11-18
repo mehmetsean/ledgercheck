@@ -16,7 +16,7 @@ US federal holidays are computed by rule in src/ledgercheck/dates.py from the pu
 
 ## What is not in the data
 
-- No real bank names, account numbers or tax ID numbers. The example files have no tax ID column, and a search for the pattern NN-NNNNNNN finds nothing in them.
+- No real bank names, account numbers or tax ID numbers. The example files have no tax ID column, and tests/test_readme_facts.py checks that no file in examples/ has the pattern NN-NNNNNNN.
 - No claim that amounts, timing or anomaly rates match real-world statistics.
 
 ## Licenses
