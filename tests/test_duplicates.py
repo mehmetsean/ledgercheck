@@ -1,3 +1,4 @@
+import random
 from datetime import date, timedelta
 
 import pytest
@@ -104,12 +105,49 @@ def test_fuzzy_skipped_without_vendors_or_invoices() -> None:
     assert find_duplicates(Ledger(), D).flags == []
 
 
-def test_compare_budget_stops_with_clear_message() -> None:
-    inv = [invoice(f"I{i}", "V1", "N", DAY, 5000) for i in range(6)]
-    pay = [payment(f"P{i}", "V1", f"I{i}", DAY, 5000) for i in range(6)]
-    tight = DuplicateSettings(max_compares=3)
-    with pytest.raises(ValueError, match="stopped after 3 pair compares"):
+def test_budget_stops_on_many_long_distinct_names() -> None:
+    rng = random.Random(5)
+    vend = [
+        Vendor(f"V{i}", "".join(rng.choice("abcdefgh") for _ in range(100)))
+        for i in range(30)
+    ]
+    inv = [invoice(f"I{i}", f"V{i}", f"N{i}", DAY, 5000) for i in range(30)]
+    pay = [payment(f"P{i}", f"V{i}", f"I{i}", DAY, 5000) for i in range(30)]
+    tight = DuplicateSettings(max_cell_steps=100_000, name_threshold=0.0)
+    with pytest.raises(ValueError, match="stopped after 100000 cell steps"):
+        find_duplicates(ledger(invoices=inv, payments=pay, vendors=vend), tight)
+
+
+def test_budget_also_counts_cheap_compares() -> None:
+    inv = [invoice(f"I{i}", "V1", "N", DAY, 5000) for i in range(30)]
+    pay = [payment(f"P{i}", "V1", f"I{i}", DAY, 5000) for i in range(30)]
+    tight = DuplicateSettings(max_cell_steps=100)
+    with pytest.raises(ValueError, match="cell steps"):
         find_duplicates(ledger(invoices=inv, payments=pay, vendors=vendors()), tight)
+
+
+def test_early_exit_skips_the_edit_distance() -> None:
+    vend = [Vendor("V1", "a"), Vendor("V2", "a" * 90)]
+    inv = [invoice("I1", "V1", "N1", DAY, 5000), invoice("I2", "V2", "N1", DAY, 5000)]
+    pay = [payment("P1", "V1", "I1", DAY, 5000), payment("P2", "V2", "I2", DAY, 5000)]
+    tiny = DuplicateSettings(max_cell_steps=20)
+    result = find_duplicates(ledger(invoices=inv, payments=pay, vendors=vend), tiny)
+    assert result.flags == []
+
+
+def test_recurring_same_amount_invoices_can_flag() -> None:
+    """Pins current behavior: INV-1001 and INV-1002 look alike to the check.
+
+    Recurring same-amount invoices can be false alarms. invoice_threshold will
+    be tuned by the evaluate command.
+    """
+    inv = [
+        invoice("I1", "V1", "INV-1001", DAY, 5000),
+        invoice("I2", "V1", "INV-1002", DAY, 5000),
+    ]
+    pay = [payment("P1", "V1", "I1", DAY, 5000), payment("P2", "V1", "I2", DAY, 5000)]
+    result = find_duplicates(ledger(invoices=inv, payments=pay, vendors=vendors()), D)
+    assert rules(result) == [("duplicate_fuzzy", "P2")]
 
 
 def test_k_counts_largest_same_amount_window() -> None:
@@ -147,7 +185,12 @@ def test_equal_normalized_names_score_one(a: str, suffix: str) -> None:
         assert name_similarity(a, a + suffix) == 1.0
 
 
-NAMES = ["Cedar Plastics Co", "Cedar Plastic Co.", "Cedar Plastics Inc", "Harbor Corp"]
+NAMES = [
+    "Cedar Plastics Co",
+    "Cedar Plastic Co.",
+    "Z",
+    "Harbor Logistics International Corp",
+]
 NUMBERS = ["A100", "a-100", "A101", "B7"]
 
 
@@ -171,9 +214,18 @@ def pair_keys(pairs):  # type: ignore[no-untyped-def]
 
 
 @settings(max_examples=150)
-@given(payment_ledgers(), st.integers(0, 20))
-def test_blocked_fuzzy_equals_all_pairs_inside_blocks(led: Ledger, window: int) -> None:
-    cfg = DuplicateSettings(window_days=window)
+@given(
+    payment_ledgers(),
+    st.integers(0, 20),
+    st.sampled_from([0.0, 0.5, 0.8, 0.95]),
+    st.sampled_from([0.0, 0.5, 0.8]),
+)
+def test_blocked_fuzzy_equals_all_pairs_inside_blocks(
+    led: Ledger, window: int, name_cut: float, number_cut: float
+) -> None:
+    cfg = DuplicateSettings(
+        window_days=window, name_threshold=name_cut, invoice_threshold=number_cut
+    )
     blocked = [p for p in find_duplicates(led, cfg).pairs if p.kind == "fuzzy"]
     inside = [
         p for p in fuzzy_pairs_all(led, cfg) if p.same_amount and p.days_apart <= window

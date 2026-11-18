@@ -70,13 +70,20 @@ class DuplicateSettings:
     window_days: 14. Fuzzy pairs must be paid within this many days.
     name_threshold: 0.8. Least vendor name similarity, from 0 to 1.
     invoice_threshold: 0.8. Least invoice number similarity, from 0 to 1.
-    max_compares: 5,000,000. The fuzzy search stops with an error above this.
+    max_cell_steps: 400,000,000. The fuzzy search stops with an error when its
+        work passes this. Work is counted in Levenshtein cell steps: each
+        compare costs 16 for call overhead, plus len(a) x len(b) when the
+        edit distance really runs. Measured on one Mac with CPython 3.13, the
+        pure Python edit distance does 19.4 million cell steps per second on
+        names of 20 to 100 characters, and a call has about 0.3 microsecond of
+        overhead. So 400,000,000 / 19,400,000 is about 20 seconds in the worst
+        case. Slower machines take longer.
     """
 
     window_days: int = 14
     name_threshold: float = 0.8
     invoice_threshold: float = 0.8
-    max_compares: int = 5_000_000
+    max_cell_steps: int = 400_000_000
 
 
 @dataclass(frozen=True)

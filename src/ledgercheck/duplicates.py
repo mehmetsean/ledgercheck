@@ -95,13 +95,6 @@ def name_similarity(a: str, b: str) -> float:
     return ratio(normalize_name(a), normalize_name(b))
 
 
-def number_similarity(a: str, b: str) -> float:
-    x, y = normalize_number(a), normalize_number(b)
-    if x == "" or y == "":
-        return 0.0
-    return ratio(x, y)
-
-
 def _records(ledger: Ledger) -> list[_Rec]:
     payments = ledger.payments or ()
     numbers = {i.invoice_id: i.invoice_number for i in ledger.invoices or ()}
@@ -163,14 +156,61 @@ def _is_exact(a: _Rec, b: _Rec) -> bool:
     return a.exact_key is not None and a.exact_key == b.exact_key
 
 
-def _fuzzy_pair(a: _Rec, b: _Rec, s: DuplicateSettings) -> DuplicatePair | None:
+COMPARE_COST = 16
+
+
+class _Meter:
+    """Counts the work of the fuzzy search and stops it at the budget."""
+
+    def __init__(self, limit: int | None, window_days: int) -> None:
+        self.limit = limit
+        self.window_days = window_days
+        self.steps = 0
+
+    def add(self, cost: int) -> None:
+        self.steps += cost
+        if self.limit is not None and self.steps > self.limit:
+            raise ValueError(
+                f"duplicate_fuzzy stopped after {self.limit} cell steps. "
+                f"Many payments share one amount within {self.window_days} days. "
+                "Lower window_days or raise max_cell_steps in the settings file"
+            )
+
+
+def _similar(a: str, b: str, floor: float, meter: _Meter, early: bool) -> float | None:
+    """The ratio when it is at least floor, else None.
+
+    The ratio cannot beat 1 - |len(a) - len(b)| / longest. When that bound is
+    already under floor, skip the edit distance.
+    """
+    longest = max(len(a), len(b))
+    if early and longest and 1 - abs(len(a) - len(b)) / longest < floor:
+        return None
+    meter.add(len(a) * len(b))
+    value = ratio(a, b)
+    return value if value >= floor else None
+
+
+def _fuzzy_pair(
+    a: _Rec, b: _Rec, s: DuplicateSettings, meter: _Meter, early: bool = True
+) -> DuplicatePair | None:
     """a is the earlier record. None when the pair does not match."""
+    meter.add(COMPARE_COST)
     if a.name == "" or b.name == "" or _is_exact(a, b):
         return None
-    name = ratio(a.name, b.name)
-    number = number_similarity(a.number, b.number)
-    if name < s.name_threshold or number < s.invoice_threshold:
+    x, y = normalize_number(a.number), normalize_number(b.number)
+    if x == "" or y == "":
+        if s.invoice_threshold > 0:
+            return None
+    name = _similar(a.name, b.name, s.name_threshold, meter, early)
+    if name is None:
         return None
+    number = 0.0
+    if x != "" and y != "":
+        found = _similar(x, y, s.invoice_threshold, meter, early)
+        if found is None:
+            return None
+        number = found
     days = (b.day - a.day).days
     same = ", same amount" if a.amount == b.amount else ""
     reason = (
@@ -185,6 +225,7 @@ def _fuzzy_blocked(
     records: list[_Rec], s: DuplicateSettings
 ) -> tuple[list[DuplicatePair], int, int]:
     ordered = sorted(records, key=lambda r: (r.amount, r.day, r.payment_id))
+    meter = _Meter(s.max_cell_steps, s.window_days)
     pairs: list[DuplicatePair] = []
     compares = 0
     k = 0
@@ -196,13 +237,7 @@ def _fuzzy_blocked(
             and (ordered[j].day - a.day).days <= s.window_days
         ):
             compares += 1
-            if compares > s.max_compares:
-                raise ValueError(
-                    f"duplicate_fuzzy stopped after {s.max_compares} pair compares. "
-                    f"Many payments share one amount within {s.window_days} days. "
-                    "Lower window_days or raise max_compares in the settings file"
-                )
-            pair = _fuzzy_pair(a, ordered[j], s)
+            pair = _fuzzy_pair(a, ordered[j], s, meter)
             if pair:
                 pairs.append(pair)
             j += 1
@@ -211,12 +246,14 @@ def _fuzzy_blocked(
 
 
 def fuzzy_pairs_all(ledger: Ledger, settings: DuplicateSettings) -> list[DuplicatePair]:
-    """Reference: compare every pair, ignoring amount and date. O(n^2)."""
+    """Reference: compare every pair, ignoring amount and date, with no early
+    exit and no budget. O(n^2)."""
     records = _records(ledger)
+    meter = _Meter(None, settings.window_days)
     out = []
     for i, a in enumerate(records):
         for b in records[i + 1 :]:
-            pair = _fuzzy_pair(a, b, settings)
+            pair = _fuzzy_pair(a, b, settings, meter, early=False)
             if pair:
                 out.append(pair)
     return out
