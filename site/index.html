@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; connect-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12151b" media="(prefers-color-scheme: dark)">
+<title>ledgercheck demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header>
+<div>
+<h1>ledgercheck demo</h1>
+<p class="lead">Checks of journal entries, AP invoices and AP payments that list items to check, each with a plain reason. They run in your browser.</p>
+<p><a href="https://github.com/mehmetsean/ledgercheck">Source code on GitHub</a></p>
+<p class="note">Your files are read in this page and nothing is uploaded. The page loads Python (Pyodide) and two wheels from this site only, and its Content-Security-Policy blocks any background request to another host. Links you click still open. You can check this in the browser's Network tab.</p>
+</div>
+</header>
+<main id="main">
+<div class="card">
+<p id="status" role="status" aria-live="polite">Loading the Python runtime. The first load downloads about 13 MB from this site.</p>
+<fieldset class="modes">
+<legend>Mode</legend>
+<label class="choice"><input type="radio" name="mode" id="mode-synthetic" value="synthetic" checked> Synthetic data</label>
+<label class="choice"><input type="radio" name="mode" id="mode-files" value="files"> Your files</label>
+</fieldset>
+
+<form id="synthetic-form">
+<p class="note wide">The data is synthetic data from synthbiz, not real company data. Its amounts are uniform draws, so a Benford misfit on them means nothing. Precision and recall are scored against the labels synthbiz plants, and they do not predict results on real books.</p>
+<div class="field">
+<label for="seed">Seed</label>
+<input id="seed" name="seed" type="number" inputmode="numeric" autocomplete="off" min="0" step="1" value="42" required>
+</div>
+<div class="field">
+<label for="months">Months (1 to 24)</label>
+<input id="months" name="months" type="number" inputmode="numeric" autocomplete="off" min="1" max="24" step="1" value="12" required>
+</div>
+<div class="field">
+<label for="size">Size</label>
+<select id="size" name="size" autocomplete="off">
+<option value="small">small</option>
+<option value="medium">medium</option>
+<option value="large">large</option>
+</select>
+</div>
+<div class="field">
+<label for="rate">Planted anomaly rate (0 to 0.2)</label>
+<input id="rate" name="rate" type="number" inputmode="decimal" autocomplete="off" min="0" max="0.2" step="0.01" value="0.1" required>
+</div>
+<div class="buttons">
+<button type="submit" id="run-synthetic" class="primary" disabled>Run on synthetic data</button>
+</div>
+</form>
+
+<form id="files-form" hidden>
+<p class="note wide">Choose CSV files, then say which file is which table and which column is which field. Files must be UTF-8 CSV with a header row. Large files can run out of memory in a browser tab, so the page stops at 150 MB in total. The command line has no such limit.</p>
+<div class="field wide">
+<label for="file-input">CSV files</label>
+<input id="file-input" type="file" accept=".csv,text/csv" multiple>
+</div>
+<div class="field">
+<label for="date-format">Date format</label>
+<select id="date-format" autocomplete="off">
+<option value="%Y-%m-%d">2025-03-31 (year-month-day)</option>
+<option value="%m/%d/%Y">03/31/2025 (month/day/year)</option>
+<option value="%d/%m/%Y">31/03/2025 (day/month/year)</option>
+<option value="%d.%m.%Y">31.03.2025 (day.month.year)</option>
+</select>
+</div>
+<div class="field">
+<label for="amounts">Amounts are in</label>
+<select id="amounts" autocomplete="off">
+<option value="cents">cents (123456 is 1,234.56)</option>
+<option value="dollars">dollars (1234.56)</option>
+</select>
+</div>
+<div id="mapping" class="wide"></div>
+<div class="buttons">
+<button type="submit" id="run-files" class="primary" disabled>Run on my files</button>
+</div>
+</form>
+</div>
+
+<section id="results" hidden aria-labelledby="results-title">
+<h2 id="results-title">Results</h2>
+<p id="result-line"></p>
+<ul id="summary" class="summary"></ul>
+<div id="rules-box" hidden>
+<h2>Precision and recall per rule</h2>
+<p class="hint">Scored against the labels synthbiz plants. A flag on a row that is not labeled counts as a false alarm.</p>
+<div id="rules"></div>
+</div>
+<h2>Benford first digit</h2>
+<div id="benford"></div>
+<h2>Items to check</h2>
+<p>Every line is an item to check. It is not a finding of fraud or error. Wide tables scroll sideways inside their own box.</p>
+<div class="filters">
+<div class="field">
+<label for="filter-rule">Rule</label>
+<select id="filter-rule" autocomplete="off"></select>
+</div>
+<div class="field" id="filter-mark-box">
+<label for="filter-mark">Mark</label>
+<select id="filter-mark" autocomplete="off">
+<option value="">all</option>
+<option value="hit">hit</option>
+<option value="false_alarm">false alarm</option>
+<option value="miss">miss</option>
+<option value="other_label">on another label</option>
+<option value="not_scored">not scored</option>
+</select>
+</div>
+</div>
+<p id="items-note" class="hint" role="status"></p>
+<div id="items"></div>
+<p><button type="button" id="clear-results" class="secondary">Clear results</button></p>
+<p><a id="download" class="button-link" hidden download="items_to_check.csv">Download items_to_check.csv</a></p>
+</section>
+</main>
+<footer>
+<div>
+<p>Decision support only, not legal, tax, accounting or assurance advice. No guarantee of compliance, and no guarantee that all errors or duplicate payments are found. False positives and misses are expected; the measured rates are shown.</p>
+<p>All rights reserved. You may view the code and run it to evaluate it. Commercial use needs a paid license from Mehmet Tuzunkan: <a href="https://www.linkedin.com/in/mstuzunkan">https://www.linkedin.com/in/mstuzunkan</a></p>
+<p>This site serves Pyodide (MPL-2.0) and the CPython standard library (PSF License) from its own origin. They keep their own licenses, see THIRD_PARTY_NOTICES.md in the source repository.</p>
+</div>
+</footer>
+<script src="pyodide/pyodide.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

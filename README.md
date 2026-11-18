@@ -6,6 +6,8 @@ Status: version 0.1.0, not released yet.
 
 A sample output is in examples/ledgercheck-seed42-12m/analysis.md. It is made from synthetic data.
 
+![The demo after a synthetic run: summary and precision and recall per rule](docs/screenshots/demo.png)
+
 ## Who it is for
 
 - People who review journal entries and AP payments at small and mid-size companies and want a first pass before a close or before outside accountants start.
@@ -230,7 +232,25 @@ After `pip install -e ".[eval]"`, `python benchmarks/bench.py` times exact-key m
 
 ## Demo
 
-An in-browser demo is planned and is not live yet.
+The demo runs in your browser at https://mehmetsean.github.io/ledgercheck/ once the repo is public. Until then, build and run it locally.
+
+It has two modes. Synthetic data makes synthbiz data from a seed, a size, a number of months and a planted anomaly rate, runs the rules and scores each flag as a hit, a false alarm or a miss, with precision, recall and F1 per rule. Your files lets you choose CSV files, say which file is which table and which column is which field, and run. It shows the items to check and a Benford table, and it gives you items_to_check.csv to download. Files are read in the page and nothing is uploaded. The page serves Python (Pyodide) and both wheels from its own site, and its Content-Security-Policy blocks any background request to another host. Links you click still open. GitHub Pages sees the normal page request (IP address, browser), as any web host does, and never your files. A meta CSP cannot set frame-ancestors and GitHub Pages cannot set headers, so another site could frame the page. The page has no login and sets no cookies. A framed copy cannot read your files or the results, but framing is a known limit. A browser test in CI fails on any request to another host. The page stops at 150 MB of files in total, because a browser tab can run out of memory. The command line has no such limit.
+
+Build and run it locally. This needs Python 3.11 or newer, git and network access to download the Pyodide archive once. The script checks the archive against a pinned sha256 and stops on a mismatch.
+
+```
+pip install -e ".[browser]"
+python scripts/build_site.py
+python -m http.server 8000 --bind 127.0.0.1 --directory _site
+```
+
+Open http://127.0.0.1:8000/. To run the browser test, install Chromium once with `python -m playwright install chromium`, keep the server running, and run this in a second terminal.
+
+```
+LEDGERCHECK_DEMO_URL=http://127.0.0.1:8000/ pytest tests_browser --no-cov
+```
+
+The unit tests for the page entry points are in tests/test_demo.py and run with the normal `pytest`. See docs/adr/0012-demo-unpacks-wheels-and-fetches-pyodide-at-build-time.md for how the site is built.
 
 ## Contributions
 

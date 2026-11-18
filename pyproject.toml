@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -16,6 +16,7 @@ dependencies = []
 eval = [
     "synthbiz @ git+https://github.com/mehmetsean/synthbiz@e60de623bba11135dac1794a8e883bcc9b02face",
 ]
+browser = ["pytest", "pytest-cov", "playwright==1.65.2"]
 dev = [
     "pytest",
     "pytest-cov",
