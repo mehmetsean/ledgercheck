@@ -16,3 +16,5 @@ build/
 data/
 !examples/**/*.csv
 badge-check/
+_site/
+.cache/
