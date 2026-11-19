@@ -152,6 +152,27 @@ def test_skip_list_only_removes_rare_poster_flags(skip: list[str]) -> None:
     assert {f.unit_id for f in left} == {k for k, u in users.items() if u in skip}
 
 
+def test_skipped_users_still_count_in_the_total() -> None:
+    lines = [line(je=f"JE-{i:03d}", user="common") for i in range(19)]
+    lines += [line(je=f"JE-8{i}", user="job") for i in range(10)]
+    lines += [line(je="JE-900", user="seldom")]
+    wide = Settings(rare_share=0.05, rare_skip_users=("job",))
+    found = run_rules(ledger(lines=lines), wide)
+    assert [f.unit_id for f in found if f.rule == "rare_poster"] == ["JE-900"]
+    dropped = [x for x in lines if x.created_by != "job"]
+    alone = run_rules(ledger(lines=dropped), Settings(rare_share=0.05))
+    assert [f for f in alone if f.rule == "rare_poster"] == []
+
+
+def test_skip_list_is_exact_match_only() -> None:
+    lines = [line(je=f"JE-{i:03d}", user="common") for i in range(40)]
+    others = ["seldom", "seldom2", "SELDOM", "sel"]
+    lines += [line(je=f"JE-9{i}", user=u) for i, u in enumerate(others)]
+    found = run_rules(ledger(lines=lines), Settings(rare_skip_users=("seldom",)))
+    users = {f.reason for f in found if f.rule == "rare_poster"}
+    assert users == {f"User id {u} posts rarely" for u in others[1:]}
+
+
 def invoices_for_split(amounts: list[int], gap_days: int = 1) -> list:  # type: ignore[type-arg]
     start = date(2025, 3, 3)
     return [

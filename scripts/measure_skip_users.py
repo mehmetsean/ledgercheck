@@ -1,4 +1,4 @@
-"""Score rare_poster with and without the system user allowlist.
+"""Score rare_poster with and without the system user skip list.
 
 python scripts/measure_skip_users.py
 python scripts/measure_skip_users.py --seeds 42 --shares 0.05,0.1
@@ -13,11 +13,39 @@ from ledgercheck.models import Settings
 SYSTEM_USERS = ("SYSTEM_BATCH", "SYSTEM_RECURRING")
 
 
+MAX_SEEDS = 200
+
+
 def seed_list(text: str) -> list[int]:
-    if "-" in text:
-        low, high = text.split("-")
-        return list(range(int(low), int(high) + 1))
-    return [int(x) for x in text.split(",")]
+    try:
+        if "-" in text:
+            low, high = (int(x) for x in text.split("-"))
+            if high < low:
+                raise ValueError("the end is below the start")
+            seeds = list(range(low, high + 1))
+        else:
+            seeds = [int(x) for x in text.split(",")]
+    except ValueError as e:
+        raise ValueError(f"--seeds: use 42, 1,9 or 101-130 ({e})") from None
+    if any(x < 0 for x in seeds):
+        raise ValueError("--seeds: seeds cannot be negative")
+    if not seeds or len(seeds) > MAX_SEEDS:
+        raise ValueError(f"--seeds: 1 to {MAX_SEEDS} seeds")
+    return seeds
+
+
+def share_list(text: str) -> list[float]:
+    try:
+        shares = [float(x) for x in text.split(",")]
+    except ValueError:
+        raise ValueError("--shares: use numbers such as 0.05,0.1") from None
+    if not shares or any(not 0 <= x <= 1 for x in shares):
+        raise ValueError("--shares: each share must be from 0 to 1")
+    return shares
+
+
+def show(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.4f}"
 
 
 def measure(
@@ -42,17 +70,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seeds", default="42")
     parser.add_argument("--shares", default="0.05,0.1")
     args = parser.parse_args(argv)
+    try:
+        seeds = seed_list(args.seeds)
+        shares = share_list(args.shares)
+    except ValueError as e:
+        parser.error(str(e))
     params = ev.EvalParams(size="large", months=12, rate=0.1)
-    seeds = seed_list(args.seeds)
     print(f"seeds {args.seeds}, large, 12 months, rate 0.1")
-    print("| rare_share | allowlist | flags | precision | recall |")
+    print("| rare_share | skip list | flags | precision | recall |")
     print("| --- | --- | --- | --- | --- |")
-    for share in (float(x) for x in args.shares.split(",")):
+    for share in shares:
         for skip in ((), SYSTEM_USERS):
             flags, tp, fp, misses = measure(seeds, share, skip, params)
             p, r = ev.precision(tp, fp), ev.recall(tp, misses)
             label = "system users" if skip else "none"
-            print(f"| {share} | {label} | {flags} | {p:.4f} | {r:.4f} |")
+            print(f"| {share} | {label} | {flags} | {show(p)} | {show(r)} |")
     return 0
 
 
