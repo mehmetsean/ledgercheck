@@ -110,10 +110,37 @@ def _holiday(
     return _flag("holiday_posting", je_id, group, reason)
 
 
-def _round(je_id: str, group: list[JournalLine], settings: Settings) -> Flag | None:
+def _series_key(group: list[JournalLine]) -> tuple[tuple[str, ...], int]:
+    accounts = sorted(x.account_id for x in group if x.debit_cents > 0)
+    return tuple(accounts), sum(x.debit_cents for x in group)
+
+
+def _round_series(
+    entries: dict[str, list[JournalLine]], settings: Settings
+) -> set[tuple[tuple[str, ...], int]]:
+    """Keys of round entries that repeat in at least N different months."""
+    need = settings.round_recurring_min_months
+    if need == 0:
+        return set()
+    months: dict[tuple[tuple[str, ...], int], set[str]] = defaultdict(set)
+    for group in entries.values():
+        key = _series_key(group)
+        if key[1] > 0 and key[1] % settings.round_step_cents == 0:
+            months[key].add(group[0].posting_date.strftime("%Y-%m"))
+    return {key for key, found in months.items() if len(found) >= need}
+
+
+def _round(
+    je_id: str,
+    group: list[JournalLine],
+    settings: Settings,
+    series: set[tuple[tuple[str, ...], int]],
+) -> Flag | None:
     total = sum(x.debit_cents for x in group)
     step = settings.round_step_cents
     if total <= 0 or total % step != 0:
+        return None
+    if _series_key(group) in series:
         return None
     reason = f"Debit total {money(total)} is a whole multiple of {money(step)}"
     return _flag("round_amount", je_id, group, reason)
@@ -173,12 +200,13 @@ def journal_flags(lines: tuple[JournalLine, ...], settings: Settings) -> list[Fl
     entries = group_entries(lines)
     years = {x.posting_date.year for x in lines}
     calendar = holiday_map(years, settings.extra_holidays, settings.us_holidays)
+    series = _round_series(entries, settings)
     out: list[Flag] = []
     for je_id, group in entries.items():
         found = [
             _weekend(je_id, group),
             _holiday(je_id, group, calendar),
-            _round(je_id, group, settings),
+            _round(je_id, group, settings, series),
             _no_approver(je_id, group),
             _period(je_id, group, settings),
         ]

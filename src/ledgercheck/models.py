@@ -101,6 +101,10 @@ class Settings:
     approval_limit_cents: 500,000 (5,000.00). Invoices at or over it need approval.
     round_step_cents: 100,000 (1,000.00). Entry debit totals that are a whole
         multiple of this are flagged.
+    round_recurring_min_months: 0. A round entry with the same debit accounts
+        and the same total in at least this many different months is a
+        recurring series, such as monthly rent, and round_amount skips it.
+        0 turns it off, otherwise at least 2.
     rare_share: 0.05. A user who posts under this share of a source type's
         entries is flagged.
     rare_min_entries: 20. Source types with fewer entries are not tested.
@@ -117,6 +121,7 @@ class Settings:
 
     approval_limit_cents: int = 500_000
     round_step_cents: int = 100_000
+    round_recurring_min_months: int = 0
     rare_share: float = 0.05
     rare_min_entries: int = 20
     rare_skip_users: tuple[str, ...] = ()
