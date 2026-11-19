@@ -125,10 +125,19 @@ def _no_approver(je_id: str, group: list[JournalLine]) -> Flag | None:
     return _flag("no_approver", je_id, group, "No approver is recorded")
 
 
-def _period(je_id: str, group: list[JournalLine]) -> Flag | None:
+def _previous_month(d: date) -> str:
+    if d.month == 1:
+        return f"{d.year - 1}-12"
+    return f"{d.year}-{d.month - 1:02d}"
+
+
+def _period(je_id: str, group: list[JournalLine], settings: Settings) -> Flag | None:
     first = group[0]
     month = first.posting_date.strftime("%Y-%m")
     if first.period == month:
+        return None
+    closing = first.period == _previous_month(first.posting_date)
+    if closing and first.posting_date.day <= settings.close_window_days:
         return None
     reason = f"Period {first.period} differs from posting month {month}"
     return _flag("period_mismatch", je_id, group, reason)
@@ -171,7 +180,7 @@ def journal_flags(lines: tuple[JournalLine, ...], settings: Settings) -> list[Fl
             _holiday(je_id, group, calendar),
             _round(je_id, group, settings),
             _no_approver(je_id, group),
-            _period(je_id, group),
+            _period(je_id, group, settings),
         ]
         out.extend(f for f in found if f is not None)
     out.extend(_rare_posters(entries, settings))

@@ -12,6 +12,7 @@ from .models import ColumnMap, DuplicateSettings, Settings
 MAX_JSON_BYTES = 1_000_000
 MAX_SETTING = 10**15
 MAX_DAYS = 3_660
+MAX_CLOSE_DAYS = 31
 MAX_HOLIDAYS = 10_000
 MAX_SKIP_USERS = 10_000
 MAX_USER_ID = 200
@@ -174,6 +175,10 @@ def _check_ranges(name: str, s: Settings) -> None:
         (
             0 <= s.split_window_days <= MAX_DAYS,
             f"split_window_days must be 0 to {MAX_DAYS}",
+        ),
+        (
+            0 <= s.close_window_days <= MAX_CLOSE_DAYS,
+            f"close_window_days must be 0 to {MAX_CLOSE_DAYS}",
         ),
         (0 < s.split_band <= 1, "split_band must be above 0 and at most 1"),
         (0 <= d.window_days <= MAX_DAYS, f"window_days must be 0 to {MAX_DAYS}"),
