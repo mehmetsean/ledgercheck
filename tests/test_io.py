@@ -385,3 +385,12 @@ def test_error_names_for_wrong_types(tmp_path: Path) -> None:
         load_settings(write_map(tmp_path, {"rare_share": "x"}))
     with pytest.raises(ValueError, match="us_holidays must be true or false"):
         load_settings(write_map(tmp_path, {"us_holidays": 3}))
+
+
+def test_rare_skip_users_setting(tmp_path: Path) -> None:
+    assert load_settings(write_map(tmp_path, {})).rare_skip_users == ()
+    path = write_map(tmp_path, {"rare_skip_users": ["SYS_A", "SYS_B"]})
+    assert load_settings(path).rare_skip_users == ("SYS_A", "SYS_B")
+    for bad in ("SYS_A", [1], [""], ["a"] * 10_001, None):
+        with pytest.raises(ValueError, match="rare_skip_users"):
+            load_settings(write_map(tmp_path, {"rare_skip_users": bad}))

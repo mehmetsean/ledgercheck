@@ -126,6 +126,32 @@ def test_rare_poster_is_per_source_type() -> None:
     assert units("rare_poster", lines=lines) == set()
 
 
+def test_rare_poster_skips_listed_users() -> None:
+    settings = Settings(rare_skip_users=("seldom",))
+    found = run_rules(ledger(lines=rare_ledger()), settings)
+    assert [f for f in found if f.rule == "rare_poster"] == []
+
+
+def test_rare_poster_skip_list_is_exact_and_leaves_others() -> None:
+    lines = rare_ledger() + [line(je="JE-901", user="other")]
+    settings = Settings(rare_skip_users=("seldom", "sel"))
+    found = run_rules(ledger(lines=lines), settings)
+    assert [f.unit_id for f in found if f.rule == "rare_poster"] == ["JE-901"]
+
+
+@given(st.lists(st.sampled_from(["a", "b", "c", "d"]), max_size=4))
+def test_skip_list_only_removes_rare_poster_flags(skip: list[str]) -> None:
+    lines = [line(je=f"JE-{i:03d}", user="common") for i in range(40)]
+    lines += [line(je=f"JE-9{i}", user=u) for i, u in enumerate("abcd")]
+    base = run_rules(ledger(lines=lines), S)
+    cut = run_rules(ledger(lines=lines), Settings(rare_skip_users=tuple(skip)))
+    assert set(cut) <= set(base)
+    left = {f for f in base if f not in cut}
+    assert all(f.rule == "rare_poster" for f in left)
+    users = {"JE-9" + str(i): u for i, u in enumerate("abcd")}
+    assert {f.unit_id for f in left} == {k for k, u in users.items() if u in skip}
+
+
 def invoices_for_split(amounts: list[int], gap_days: int = 1) -> list:  # type: ignore[type-arg]
     start = date(2025, 3, 3)
     return [

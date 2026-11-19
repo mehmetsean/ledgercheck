@@ -148,7 +148,9 @@ def _rare_posters(
         source, user = group[0].source_type, group[0].created_by
         total = by_type[source]
         count = by_user[(source, user)]
-        if user == "" or total < settings.rare_min_entries:
+        if user == "" or user in settings.rare_skip_users:
+            continue
+        if total < settings.rare_min_entries:
             continue
         if count / total >= settings.rare_share:
             continue
