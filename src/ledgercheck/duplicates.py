@@ -50,6 +50,7 @@ class DuplicateResult:
 @dataclass(frozen=True)
 class _Rec:
     payment_id: str
+    vendor_id: str
     invoice_id: str
     day: date
     amount: int
@@ -108,6 +109,7 @@ def _records(ledger: Ledger) -> list[_Rec]:
         out.append(
             _Rec(
                 p.payment_id,
+                p.vendor_id,
                 p.invoice_id,
                 p.payment_date,
                 p.amount_cents,
@@ -222,9 +224,43 @@ def _fuzzy_pair(
                          days, a.amount == b.amount, reason)  # fmt: skip
 
 
+SLACK_DAYS = 1
+
+
+def _cadences(records: list[_Rec], minimum: int) -> dict[tuple[str, int], int]:
+    """Median gap in days of each vendor and amount series with enough payments."""
+    if minimum == 0:
+        return {}
+    series: dict[tuple[str, int], list[date]] = defaultdict(list)
+    for r in records:
+        series[(r.vendor_id, r.amount)].append(r.day)
+    out: dict[tuple[str, int], int] = {}
+    for key, days in series.items():
+        if len(days) < minimum:
+            continue
+        days.sort()
+        gaps = sorted((b - a).days for a, b in zip(days, days[1:], strict=False))
+        median = gaps[len(gaps) // 2]
+        if median >= 1:
+            out[key] = median
+    return out
+
+
+def _on_cadence(a: _Rec, b: _Rec, cadences: dict[tuple[str, int], int]) -> bool:
+    if a.vendor_id != b.vendor_id:
+        return False
+    step = cadences.get((a.vendor_id, a.amount))
+    if step is None:
+        return False
+    days = (b.day - a.day).days
+    steps = round(days / step)
+    return steps >= 1 and abs(days - steps * step) <= SLACK_DAYS
+
+
 def _fuzzy_blocked(
     records: list[_Rec], s: DuplicateSettings
 ) -> tuple[list[DuplicatePair], int, int]:
+    cadences = _cadences(records, s.recurring_min_count)
     ordered = sorted(records, key=lambda r: (r.amount, r.day, r.payment_id))
     meter = _Meter(s.max_cell_steps, s.window_days)
     pairs: list[DuplicatePair] = []
@@ -239,7 +275,7 @@ def _fuzzy_blocked(
         ):
             compares += 1
             pair = _fuzzy_pair(a, ordered[j], s, meter)
-            if pair:
+            if pair and not _on_cadence(a, ordered[j], cadences):
                 pairs.append(pair)
             j += 1
         k = max(k, j - i)

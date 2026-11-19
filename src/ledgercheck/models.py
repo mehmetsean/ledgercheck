@@ -77,12 +77,17 @@ class DuplicateSettings:
         edit distance work on the benchmark machine, about 21 million cell
         steps per second (benchmarks/bench.py, docs/benchmark.md). A user may
         raise max_cell_steps, up to 10**15, at the cost of a longer run.
+    recurring_min_count: 0. Payments of one vendor with one amount, at least
+        this many, form a recurring series. A fuzzy pair inside a series, one
+        or more cadence steps apart (the cadence is the median gap, with 1 day
+        of slack), is not flagged. 0 turns it off. Otherwise at least 2.
     """
 
     window_days: int = 14
     name_threshold: float = 0.8
     invoice_threshold: float = 0.8
     max_cell_steps: int = 400_000_000
+    recurring_min_count: int = 0
 
 
 @dataclass(frozen=True)
