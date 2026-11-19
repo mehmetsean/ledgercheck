@@ -13,6 +13,8 @@ MAX_JSON_BYTES = 1_000_000
 MAX_SETTING = 10**15
 MAX_DAYS = 3_660
 MAX_HOLIDAYS = 10_000
+MAX_SKIP_USERS = 10_000
+MAX_USER_ID = 200
 ARTICLES: dict[Any, str] = {int: "an integer", float: "a number", bool: "true or false"}
 
 
@@ -107,9 +109,12 @@ def _fill(name: str, data: dict[str, Any], cls: type, skip: set[str]) -> dict[st
 
 
 def _user_list(name: str, raw: Any) -> tuple[str, ...]:
-    ok = isinstance(raw, list) and len(raw) <= MAX_HOLIDAYS
+    ok = isinstance(raw, list) and len(raw) <= MAX_SKIP_USERS
     if ok:
-        ok = all(isinstance(x, str) and 0 < len(x) <= 200 for x in raw)
+        ok = all(
+            isinstance(x, str) and 0 < len(x) <= MAX_USER_ID and x == x.strip()
+            for x in raw
+        )
     if not ok:
         raise ValueError(f"{name}: rare_skip_users must be a list of user ids")
     return tuple(raw)
