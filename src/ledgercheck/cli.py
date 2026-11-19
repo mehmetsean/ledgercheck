@@ -27,6 +27,7 @@ from .evaluate import (
     max_months,
     parse_seeds,
     read_manifest_info,
+    read_manifest_limit,
 )
 from .io import plain, read_folder
 from .models import Settings
@@ -62,10 +63,17 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _settings(args: argparse.Namespace) -> Settings:
+    limit = read_manifest_limit(args.data)
+    if args.settings:
+        return load_settings(args.settings, limit)
+    return Settings() if limit is None else Settings(approval_limit_cents=limit)
+
+
 def _run(args: argparse.Namespace) -> None:
     check_out_folder(args.out, args.data, args.force)
     cmap = load_column_map(args.column_map) if args.column_map else None
-    settings = load_settings(args.settings) if args.settings else Settings()
+    settings = _settings(args)
     ledger = read_folder(args.data, cmap)
     result = analyze(ledger, settings)
     write_report(args.out, result, args.force)
@@ -96,7 +104,7 @@ def _evaluate_folder(args: argparse.Namespace, costs: CostTable) -> None:
     used = [name for name in SEED_ONLY if getattr(args, name) is not None]
     if used or args.force:
         raise ValueError("a DATA folder cannot be combined with the seed run options")
-    settings = load_settings(args.settings) if args.settings else Settings()
+    settings = _settings(args)
     scores, count = evaluate_folder(args.data, settings, costs)
     print(folder_text(scores, count, read_manifest_info(args.data), costs))
 
