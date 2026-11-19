@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows Keep a Changelog.
 
 ### Added
 
+- The duplicates.sequence_max_step setting: fuzzy pairs whose invoice numbers have the same text before their final digits and differ by 1 up to that value (INV-1001 and INV-1002) are not flagged. The default is 0 (off), so no measured number changes. On synthetic data (large, 12 months, rate 0.1, seeds 101-130), duplicate_fuzzy precision goes from 0.5134 to 1.0000 at 2 and recall stays 0.8547. See docs/adr/0017-sequential-invoice-number-guard.md.
+- scripts/measure_sequence.py, which scores duplicate_fuzzy for several sequence steps.
 - The duplicates.recurring_min_count setting: fuzzy pairs inside a regular same-vendor, same-amount series of at least that many payments are not flagged. The default is 0 (off), so no measured number changes. On synthetic data (large, 12 months, rate 0.1, seeds 101-130), duplicate_fuzzy precision goes from 0.5134 to 0.9366 at 3 and recall stays 0.8547. See docs/adr/0016-recurring-series-skip-for-fuzzy-duplicates.md.
 - scripts/measure_recurring.py, which scores duplicate_fuzzy for several series minimums.
 - The close_window_days setting: an entry posted on day N of the month or earlier, where N is close_window_days, with the previous month as its period, is not flagged by period_mismatch. The default is 0, so no measured number changes. See docs/adr/0015-close-window-days.md.
