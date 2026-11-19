@@ -97,6 +97,9 @@ class Settings:
     rare_min_entries: 20. Source types with fewer entries are not tested.
     rare_skip_users: none. User ids that rare_poster never flags, such as system
         or batch users. Their entries still count toward the source type total.
+    close_window_days: 0. An entry posted on this day of the month or earlier
+        with the previous month as its period is normal close activity and is
+        not flagged by period_mismatch. 0 turns it off. Most 31.
     split_window_days: 7. Invoices of one vendor this close together can form a group.
     split_band: 0.3. "Just under the limit" means within this share below it.
     extra_holidays: none. Dates added to the US federal holiday calendar.
@@ -108,6 +111,7 @@ class Settings:
     rare_share: float = 0.05
     rare_min_entries: int = 20
     rare_skip_users: tuple[str, ...] = ()
+    close_window_days: int = 0
     split_window_days: int = 7
     split_band: float = 0.3
     extra_holidays: tuple[date, ...] = ()
