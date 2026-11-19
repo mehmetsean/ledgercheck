@@ -1,3 +1,4 @@
+import sys
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -9,6 +10,10 @@ from helpers import ledger, line
 from ledgercheck.config import load_settings
 from ledgercheck.models import Settings
 from ledgercheck.rules import run_rules
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+import measure_close_window  # noqa: E402
 
 
 def mismatch(day: date, period: str, window: int) -> set[str]:
@@ -76,3 +81,22 @@ def test_setting_file(tmp_path: Path) -> None:
 def test_setting_file_rejects(tmp_path: Path, bad: str) -> None:
     with pytest.raises(ValueError, match="close_window_days"):
         load_settings(write(tmp_path, f'{{"close_window_days": {bad}}}'))
+
+
+def test_measure_script_table(capsys: pytest.CaptureFixture[str]) -> None:
+    assert measure_close_window.main(["--seeds", "42", "--windows", "0,5"]) == 0
+    out = capsys.readouterr().out
+    assert "| 0 | 48 | 26 | 22 | 0.5417 | 1.0000 |" in out
+    assert "| 5 | 26 | 26 | 0 | 1.0000 | 1.0000 |" in out
+
+
+@pytest.mark.parametrize("windows", ["32", "-1", "x", "1,,2", ""])
+def test_measure_script_bad_windows(windows: str) -> None:
+    with pytest.raises(SystemExit) as e:
+        measure_close_window.main(["--windows", windows])
+    assert e.value.code == 2
+
+
+def test_measure_script_show() -> None:
+    assert measure_close_window.show(None) == "n/a"
+    assert measure_close_window.show(0.5) == "0.5000"
