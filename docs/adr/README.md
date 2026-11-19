@@ -13,3 +13,4 @@
 - [0011 Measure on data with background rows](0011-measure-on-data-with-background-rows.md)
 - [0012 The demo unpacks wheels directly and fetches Pyodide at build time](0012-demo-unpacks-wheels-and-fetches-pyodide-at-build-time.md)
 - [0013 The approval limit comes from manifest.json when present](0013-approval-limit-from-the-manifest.md)
+- [0014 rare_poster has a skip list for system users](0014-rare-poster-skip-list.md)
