@@ -108,11 +108,15 @@ def test_setting_never_adds_flags(n: int, step: int, limit: int) -> None:
     assert fuzzy(data, limit) <= fuzzy(data, 0)
 
 
-def test_reference_agrees_with_blocked_search() -> None:
-    data = two("INV-1001", "INV-1002")
-    s = DuplicateSettings(sequence_max_step=1)
-    assert fuzzy_pairs_all(data, s) == []
-    assert fuzzy_pairs_all(data, DuplicateSettings()) != []
+@pytest.mark.parametrize("step", [0, 1])
+def test_find_duplicates_matches_fuzzy_pairs_all(step: int) -> None:
+    data = two("INVOICE-1001", "INVOICE-1002")
+    s = DuplicateSettings(sequence_max_step=step)
+    found = find_duplicates(data, s).pairs
+    fuzzy_found = {(p.earlier_id, p.later_id) for p in found if p.kind == "fuzzy"}
+    every = {(p.earlier_id, p.later_id) for p in fuzzy_pairs_all(data, s)}
+    assert fuzzy_found == every
+    assert (len(every) == 0) == (step == 1)
 
 
 def write(tmp_path: Path, text: str) -> Path:
