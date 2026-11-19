@@ -77,6 +77,16 @@ def test_digit_width_change() -> None:
     assert is_sequence("inv999", "inv1000", 1) is True
 
 
+def test_superscript_digits_do_not_raise() -> None:
+    assert is_sequence("inv1\u00b2", "inv1\u00b3", 2) is False
+    assert fuzzy(two("INVOICE-1\u00b2", "INVOICE-1\u00b3"), 2) == {"P2"}
+
+
+def test_very_long_digit_run_does_not_raise() -> None:
+    long = "inv" + "9" * 5000
+    assert is_sequence(long, long[:-1] + "8", 2) is False
+
+
 def test_zero_turns_it_off() -> None:
     assert is_sequence("inv1", "inv2", 0) is False
 

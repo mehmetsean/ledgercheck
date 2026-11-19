@@ -194,13 +194,17 @@ def _similar(a: str, b: str, floor: float, meter: _Meter, early: bool) -> float 
     return value if value >= floor else None
 
 
+DIGITS = "0123456789"
+MAX_DIGITS = 18
+
+
 def _split_digits(number: str) -> tuple[str, int] | None:
     """Text before the final digits and the value of those digits."""
     end = len(number)
     start = end
-    while start > 0 and number[start - 1].isdigit():
+    while start > 0 and number[start - 1] in DIGITS:
         start -= 1
-    if start == end:
+    if start == end or end - start > MAX_DIGITS:
         return None
     return number[:start], int(number[start:])
 
