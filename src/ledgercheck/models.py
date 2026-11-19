@@ -95,6 +95,8 @@ class Settings:
     rare_share: 0.05. A user who posts under this share of a source type's
         entries is flagged.
     rare_min_entries: 20. Source types with fewer entries are not tested.
+    rare_skip_users: none. User ids that rare_poster never flags, such as system
+        or batch users. Their entries still count toward the source type total.
     split_window_days: 7. Invoices of one vendor this close together can form a group.
     split_band: 0.3. "Just under the limit" means within this share below it.
     extra_holidays: none. Dates added to the US federal holiday calendar.
@@ -105,6 +107,7 @@ class Settings:
     round_step_cents: int = 100_000
     rare_share: float = 0.05
     rare_min_entries: int = 20
+    rare_skip_users: tuple[str, ...] = ()
     split_window_days: int = 7
     split_band: float = 0.3
     extra_holidays: tuple[date, ...] = ()

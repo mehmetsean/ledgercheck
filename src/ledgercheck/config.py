@@ -13,6 +13,8 @@ MAX_JSON_BYTES = 1_000_000
 MAX_SETTING = 10**15
 MAX_DAYS = 3_660
 MAX_HOLIDAYS = 10_000
+MAX_SKIP_USERS = 10_000
+MAX_USER_ID = 200
 ARTICLES: dict[Any, str] = {int: "an integer", float: "a number", bool: "true or false"}
 
 
@@ -106,10 +108,23 @@ def _fill(name: str, data: dict[str, Any], cls: type, skip: set[str]) -> dict[st
     return out
 
 
+def _user_list(name: str, raw: Any) -> tuple[str, ...]:
+    ok = isinstance(raw, list) and len(raw) <= MAX_SKIP_USERS
+    if ok:
+        ok = all(
+            isinstance(x, str) and 0 < len(x) <= MAX_USER_ID and x == x.strip()
+            for x in raw
+        )
+    if not ok:
+        raise ValueError(f"{name}: rare_skip_users must be a list of user ids")
+    return tuple(raw)
+
+
 def load_settings(path: Path, data_limit: int | None = None) -> Settings:
     data = _load_json(path)
     name = plain(path.name)
-    values = _fill(name, data, Settings, {"extra_holidays", "duplicates"})
+    own = {"extra_holidays", "duplicates", "rare_skip_users"}
+    values = _fill(name, data, Settings, own)
     if data_limit is not None and "approval_limit_cents" not in values:
         values["approval_limit_cents"] = data_limit
     holidays: list[date] = []
@@ -123,6 +138,7 @@ def load_settings(path: Path, data_limit: int | None = None) -> Settings:
             holidays.append(date.fromisoformat(item))
         except (TypeError, ValueError):
             raise ValueError(f"{name}: extra_holidays needs YYYY-MM-DD dates") from None
+    skip = _user_list(name, data.get("rare_skip_users", []))
     dup = data.get("duplicates", {})
     if not isinstance(dup, dict):
         raise ValueError(f"{name}: duplicates must be an object")
@@ -130,6 +146,7 @@ def load_settings(path: Path, data_limit: int | None = None) -> Settings:
     settings = Settings(
         extra_holidays=tuple(holidays),
         duplicates=DuplicateSettings(**dup_values),
+        rare_skip_users=skip,
         **values,
     )
     _check_ranges(name, settings)

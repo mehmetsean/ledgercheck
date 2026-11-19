@@ -143,12 +143,15 @@ def _rare_posters(
         first = group[0]
         by_type[first.source_type] += 1
         by_user[(first.source_type, first.created_by)] += 1
+    skip = frozenset(settings.rare_skip_users)
     out: list[Flag] = []
     for je_id, group in entries.items():
         source, user = group[0].source_type, group[0].created_by
         total = by_type[source]
         count = by_user[(source, user)]
-        if user == "" or total < settings.rare_min_entries:
+        if user == "" or user in skip:
+            continue
+        if total < settings.rare_min_entries:
             continue
         if count / total >= settings.rare_share:
             continue
