@@ -70,7 +70,7 @@ def test_measure_script_shows_na_when_nothing_is_flagged(
 
 
 @pytest.mark.parametrize(
-    "seeds", ["1-2-3", "a-b", "-5", "5-1", "1-201", "x", "1,,2", ""]
+    "seeds", ["0-99999999999", "1-2-3", "a-b", "-5", "5-1", "1-201", "x", "1,,2", ""]
 )
 def test_bad_seeds_are_a_usage_error(seeds: str) -> None:
     with pytest.raises(SystemExit) as e:
@@ -87,3 +87,25 @@ def test_bad_shares_are_a_usage_error(shares: str) -> None:
 
 def test_seed_cap() -> None:
     assert len(measure_skip_users.seed_list("1-200")) == 200
+
+
+def test_huge_seed_range_is_rejected_fast() -> None:
+    with pytest.raises(ValueError, match="at most 200"):
+        measure_skip_users.seed_list("0-99999999999")
+
+
+def test_negative_seed_message() -> None:
+    with pytest.raises(ValueError, match="negative"):
+        measure_skip_users.seed_list("-5")
+
+
+def test_missing_synthbiz_is_a_usage_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def gone(*a: object, **k: object) -> None:
+        raise ValueError("install synthbiz")
+
+    monkeypatch.setattr(measure_skip_users.ev, "make_seed", gone)
+    with pytest.raises(SystemExit) as e:
+        measure_skip_users.main(["--seeds", "42"])
+    assert e.value.code == 2

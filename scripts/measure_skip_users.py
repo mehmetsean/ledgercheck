@@ -1,9 +1,10 @@
-"""Score rare_poster with and without the system user skip list.
+"""Score rare_poster on synthbiz synthetic data, with and without the system user skip list.
 
 python scripts/measure_skip_users.py
 python scripts/measure_skip_users.py --seeds 42 --shares 0.05,0.1
 """
 
+# ruff: noqa: E501
 import argparse
 import sys
 
@@ -17,15 +18,21 @@ MAX_SEEDS = 200
 
 
 def seed_list(text: str) -> list[int]:
+    if text.startswith("-"):
+        raise ValueError("--seeds: seeds cannot be negative")
     try:
         if "-" in text:
             low, high = (int(x) for x in text.split("-"))
             if high < low:
                 raise ValueError("the end is below the start")
+            if high - low + 1 > MAX_SEEDS:
+                raise ValueError(f"at most {MAX_SEEDS} seeds")
             seeds = list(range(low, high + 1))
         else:
             seeds = [int(x) for x in text.split(",")]
     except ValueError as e:
+        if "at most" in str(e):
+            raise ValueError(f"--seeds: {e}") from None
         raise ValueError(f"--seeds: use 42, 1,9 or 101-130 ({e})") from None
     if any(x < 0 for x in seeds):
         raise ValueError("--seeds: seeds cannot be negative")
@@ -76,15 +83,20 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as e:
         parser.error(str(e))
     params = ev.EvalParams(size="large", months=12, rate=0.1)
+    rows = []
+    try:
+        for share in shares:
+            for skip in ((), SYSTEM_USERS):
+                flags, tp, fp, misses = measure(seeds, share, skip, params)
+                p, r = ev.precision(tp, fp), ev.recall(tp, misses)
+                label = "system users" if skip else "none"
+                rows.append(f"| {share} | {label} | {flags} | {show(p)} | {show(r)} |")
+    except ValueError as e:
+        parser.error(str(e))
     print(f"seeds {args.seeds}, large, 12 months, rate 0.1")
     print("| rare_share | skip list | flags | precision | recall |")
     print("| --- | --- | --- | --- | --- |")
-    for share in shares:
-        for skip in ((), SYSTEM_USERS):
-            flags, tp, fp, misses = measure(seeds, share, skip, params)
-            p, r = ev.precision(tp, fp), ev.recall(tp, misses)
-            label = "system users" if skip else "none"
-            print(f"| {share} | {label} | {flags} | {show(p)} | {show(r)} |")
+    print("\n".join(rows))
     return 0
 
 

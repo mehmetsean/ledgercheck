@@ -7,7 +7,7 @@ All notable changes are listed here. The format follows Keep a Changelog.
 ### Added
 
 - The rare_skip_users setting: user ids that rare_poster never flags. The default is empty, so no measured number changes. See docs/adr/0014-rare-poster-skip-list.md.
-- scripts/measure_skip_users.py, which scores rare_poster with and without the system user ids (skip list).
+- scripts/measure_skip_users.py, which scores rare_poster with and without the system user skip list.
 
 ## 0.1.0 - 2026-11-18
 
