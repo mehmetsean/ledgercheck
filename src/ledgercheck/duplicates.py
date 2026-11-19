@@ -254,7 +254,7 @@ def _on_cadence(a: _Rec, b: _Rec, cadences: dict[tuple[str, int], int]) -> bool:
         return False
     days = (b.day - a.day).days
     steps = round(days / step)
-    return  abs(days - steps * step) <= SLACK_DAYS
+    return steps >= 1 and abs(days - steps * step) <= SLACK_DAYS
 
 
 def _fuzzy_blocked(
