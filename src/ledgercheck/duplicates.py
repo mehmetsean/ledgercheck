@@ -194,6 +194,27 @@ def _similar(a: str, b: str, floor: float, meter: _Meter, early: bool) -> float 
     return value if value >= floor else None
 
 
+def _split_digits(number: str) -> tuple[str, int] | None:
+    """Text before the final digits and the value of those digits."""
+    end = len(number)
+    start = end
+    while start > 0 and number[start - 1].isdigit():
+        start -= 1
+    if start == end:
+        return None
+    return number[:start], int(number[start:])
+
+
+def is_sequence(x: str, y: str, max_step: int) -> bool:
+    """True when x and y differ only by a final number 1 to max_step apart."""
+    if max_step < 1:
+        return False
+    a, b = _split_digits(x), _split_digits(y)
+    if a is None or b is None or a[0] != b[0]:
+        return False
+    return 1 <= abs(a[1] - b[1]) <= max_step
+
+
 def _fuzzy_pair(
     a: _Rec, b: _Rec, s: DuplicateSettings, meter: _Meter, early: bool = True
 ) -> DuplicatePair | None:
@@ -214,6 +235,8 @@ def _fuzzy_pair(
         if found is None:
             return None
         number = found
+        if is_sequence(x, y, s.sequence_max_step):
+            return None
     days = (b.day - a.day).days
     same = ", same amount" if a.amount == b.amount else ""
     reason = (
