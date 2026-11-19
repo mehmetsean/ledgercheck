@@ -159,6 +159,7 @@ def _check_ranges(name: str, s: Settings) -> None:
     whole = {
         "approval_limit_cents": s.approval_limit_cents,
         "round_step_cents": s.round_step_cents,
+        "round_recurring_min_months": s.round_recurring_min_months,
         "rare_min_entries": s.rare_min_entries,
         "split_window_days": s.split_window_days,
         "window_days": d.window_days,
@@ -172,6 +173,10 @@ def _check_ranges(name: str, s: Settings) -> None:
     checks = [
         (s.approval_limit_cents > 0, "approval_limit_cents must be above 0"),
         (s.round_step_cents > 0, "round_step_cents must be above 0"),
+        (
+            s.round_recurring_min_months == 0 or s.round_recurring_min_months >= 2,
+            "round_recurring_min_months must be 0 or at least 2",
+        ),
         (0 <= s.rare_share <= 1, "rare_share must be from 0 to 1"),
         (s.rare_min_entries >= 1, "rare_min_entries must be at least 1"),
         (
