@@ -164,6 +164,7 @@ def _check_ranges(name: str, s: Settings) -> None:
         "window_days": d.window_days,
         "max_cell_steps": d.max_cell_steps,
         "recurring_min_count": d.recurring_min_count,
+        "sequence_max_step": d.sequence_max_step,
     }
     for key, value in whole.items():
         if abs(value) > MAX_SETTING:
@@ -190,6 +191,7 @@ def _check_ranges(name: str, s: Settings) -> None:
             d.recurring_min_count == 0 or d.recurring_min_count >= 2,
             "recurring_min_count must be 0 or at least 2",
         ),
+        (d.sequence_max_step >= 0, "sequence_max_step must be 0 or more"),
     ]
     for ok, message in checks:
         if not ok:

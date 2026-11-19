@@ -81,6 +81,9 @@ class DuplicateSettings:
         this many, form a recurring series. A fuzzy pair inside a series, one
         or more cadence steps apart (the cadence is the median gap, with 1 day
         of slack), is not flagged. 0 turns it off. Otherwise at least 2.
+    sequence_max_step: 0. Two invoice numbers with the same text before their
+        final digits, whose numbers differ by 1 up to this value (INV-1001 and
+        INV-1002), are a normal sequence and not a fuzzy pair. 0 turns it off.
     """
 
     window_days: int = 14
@@ -88,6 +91,7 @@ class DuplicateSettings:
     invoice_threshold: float = 0.8
     max_cell_steps: int = 400_000_000
     recurring_min_count: int = 0
+    sequence_max_step: int = 0
 
 
 @dataclass(frozen=True)
