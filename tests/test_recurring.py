@@ -68,6 +68,31 @@ def test_other_amount_is_not_part_of_the_series() -> None:
     )
 
 
+def test_series_of_exactly_the_minimum_is_skipped() -> None:
+    assert fuzzy(weekly(3), 3) == set()
+    assert fuzzy(weekly(3), 4) != set()
+
+
+def test_extra_payment_on_a_series_day_is_flagged() -> None:
+    assert fuzzy(weekly(5, extra=[7]), 3) != set()
+
+
+def test_same_day_payments_do_not_raise() -> None:
+    assert fuzzy(weekly(3, gap=0), 3) != set()
+
+
+def test_other_vendor_on_cadence_is_flagged() -> None:
+    data = weekly(4)
+    inv = list(data.invoices or ())
+    pay = list(data.payments or ())
+    day = START + timedelta(days=28)
+    inv.append(invoice("I9", "V2", "FR-109", day, 5000))
+    pay.append(payment("P9", "V2", "I9", day, 5000))
+    vendors = [*(data.vendors or ()), Vendor("V2", "Cedar Plastics")]
+    other = ledger(invoices=inv, payments=pay, vendors=vendors)
+    assert "P9" in fuzzy(other, 3)
+
+
 @given(st.integers(2, 8), st.integers(1, 14), st.integers(0, 6))
 def test_setting_never_adds_flags(count: int, gap: int, extra: int) -> None:
     data = weekly(count, gap, [extra])
