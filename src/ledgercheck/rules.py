@@ -125,6 +125,7 @@ def _round_series(
     months: dict[tuple[tuple[str, ...], int], set[str]] = defaultdict(set)
     for group in entries.values():
         key = _series_key(group)
+        # same round test as _round
         if key[1] > 0 and key[1] % settings.round_step_cents == 0:
             months[key].add(group[0].posting_date.strftime("%Y-%m"))
     return {key for key, found in months.items() if len(found) >= need}
