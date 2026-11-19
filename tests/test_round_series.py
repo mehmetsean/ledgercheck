@@ -152,3 +152,17 @@ def test_measure_script_bad_minimums(minimums: str) -> None:
 def test_measure_script_show() -> None:
     assert measure_round_series.show(None) == "n/a"
     assert measure_round_series.show(0.5) == "0.5000"
+
+
+def test_two_lines_on_one_account_match_across_months() -> None:
+    def pair(je: str, month: int) -> list[JournalLine]:
+        return [entry(je, month, 200_000), entry(je, month, 200_000)]
+
+    assert flagged(pair("A", 1) + pair("B", 2), 2) == set()
+
+
+def test_entry_month_comes_from_the_first_line() -> None:
+    first = entry("A", 1, 400_000)
+    second = replace(entry("A", 1, 0), posting_date=date(2025, 2, 10))
+    other = entry("B", 2, 400_000)
+    assert flagged([first, second, other], 2) == set()
