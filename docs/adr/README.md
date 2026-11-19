@@ -17,3 +17,4 @@
 - [0015 period_mismatch has a close window](0015-close-window-days.md)
 - [0016 duplicate_fuzzy can skip recurring same-amount series](0016-recurring-series-skip-for-fuzzy-duplicates.md)
 - [0017 duplicate_fuzzy can skip normal invoice number sequences](0017-sequential-invoice-number-guard.md)
+- [0018 round_amount can skip recurring round entries](0018-round-amount-recurring-series-skip.md)
