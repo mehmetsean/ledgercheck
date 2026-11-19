@@ -16,7 +16,7 @@ Other rules also hit recurring rows, for example the monthly rent accrual under 
 
 ## Decision
 
-Option 1. The setting is duplicates.recurring_min_count. It is 0 by default, which turns it off, so no measured number changes. Otherwise it is at least 2. Payments of one vendor with one amount form a series when there are at least that many. The cadence is the median gap in days between consecutive payments of the series, and a series with a cadence under 1 day is ignored. A fuzzy pair of the same vendor is skipped when its days apart is within 1 day of a whole multiple of the cadence. A copy paid a few days after its original is not on the cadence, so it is still flagged. The pass over the payments costs O(n log n) for the sort and adds O(1) to each compare. The 1 day slack covers holiday shifts and is fixed.
+Option 1. The setting is duplicates.recurring_min_count. It is 0 by default, which turns it off, so no measured number changes. Otherwise it is at least 2. Payments of one vendor with one amount form a series when there are at least that many. The cadence is the median gap in days between consecutive payments of the series, and a series with a cadence under 1 day is ignored. A fuzzy pair of the same vendor is skipped when its days apart is within 1 day of a whole multiple of the cadence. A copy paid more than 1 day off every multiple of the cadence, for example 3 days after a weekly payment, is still flagged. The pass over the payments costs O(n log n) for the sort and adds O(1) to each compare. The 1 day slack is a fixed choice and is not tuned.
 
 ## Consequences
 
