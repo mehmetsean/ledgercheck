@@ -81,10 +81,6 @@ def test_any_valid_manifest_limit_round_trips(limit: int) -> None:
         assert ev.read_manifest_limit(folder) == limit
 
 
-def test_default_stays_without_a_manifest(tmp_path: Path) -> None:
-    assert ev.read_manifest_limit(tmp_path) is None
-
-
 @pytest.fixture(scope="module")
 def synthetic(tmp_path_factory: pytest.TempPathFactory) -> Path:
     folder = tmp_path_factory.mktemp("lim")
@@ -117,6 +113,83 @@ def test_run_matches_today_with_the_synthbiz_limit(
     (bare / "manifest.json").unlink()
     assert main(["run", str(synthetic), "--out", str(tmp_path / "a")]) == 0
     assert main(["run", str(bare), "--out", str(tmp_path / "b")]) == 0
+    a = (tmp_path / "a" / "items_to_check.csv").read_text("utf-8")
+    b = (tmp_path / "b" / "items_to_check.csv").read_text("utf-8")
+    assert a == b
+
+
+def copy_with_limit(synthetic: Path, dest: Path, limit: int | None) -> Path:
+    shutil.copytree(synthetic, dest)
+    if limit is not None:
+        body = json.loads((dest / "manifest.json").read_text("utf-8"))
+        body["approval_limit_cents"] = limit
+        manifest(dest, body)
+    return dest
+
+
+def evaluate_text(folder: Path, capsys: pytest.CaptureFixture[str], *extra: str) -> str:
+    capsys.readouterr()
+    assert main(["evaluate", str(folder), *extra]) == 0
+    return capsys.readouterr().out
+
+
+def test_evaluate_folder_uses_the_manifest_limit(
+    synthetic: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base = copy_with_limit(synthetic, tmp_path / "base", 500_000)
+    big = copy_with_limit(synthetic, tmp_path / "big", 1_000_000)
+    assert evaluate_text(base, capsys) != evaluate_text(big, capsys)
+
+
+def test_settings_without_a_limit_use_the_manifest(
+    synthetic: Path, tmp_path: Path
+) -> None:
+    plain_settings = tmp_path / "s.json"
+    plain_settings.write_text('{"rare_share": 0.05}')
+    base = copy_with_limit(synthetic, tmp_path / "base", 500_000)
+    big = copy_with_limit(synthetic, tmp_path / "big", 1_000_000)
+    args = ["--settings", str(plain_settings)]
+    assert main(["run", str(base), "--out", str(tmp_path / "a"), *args]) == 0
+    assert main(["run", str(big), "--out", str(tmp_path / "b"), *args]) == 0
+    assert split_count(tmp_path / "a") != split_count(tmp_path / "b")
+
+
+def test_settings_limit_beats_the_manifest_in_the_cli(
+    synthetic: Path, tmp_path: Path
+) -> None:
+    fixed = tmp_path / "s.json"
+    fixed.write_text('{"approval_limit_cents": 500000}')
+    base = copy_with_limit(synthetic, tmp_path / "base", 500_000)
+    big = copy_with_limit(synthetic, tmp_path / "big", 1_000_000)
+    args = ["--settings", str(fixed)]
+    assert main(["run", str(base), "--out", str(tmp_path / "a"), *args]) == 0
+    assert main(["run", str(big), "--out", str(tmp_path / "b"), *args]) == 0
+    assert split_count(tmp_path / "a") == split_count(tmp_path / "b")
+
+
+def test_run_with_a_text_limit_in_settings_fails(
+    synthetic: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bad = tmp_path / "s.json"
+    bad.write_text('{"approval_limit_cents": "5"}')
+    code = main(
+        ["run", str(synthetic), "--out", str(tmp_path / "o"), "--settings", str(bad)]
+    )
+    assert code != 0
+    assert "approval_limit_cents" in capsys.readouterr().err
+
+
+def test_cli_without_a_manifest_equals_the_default_limit(
+    synthetic: Path, tmp_path: Path
+) -> None:
+    bare = tmp_path / "bare"
+    shutil.copytree(synthetic, bare)
+    (bare / "manifest.json").unlink()
+    default = tmp_path / "default.json"
+    default.write_text('{"approval_limit_cents": 500000}')
+    assert main(["run", str(bare), "--out", str(tmp_path / "a")]) == 0
+    args = ["--settings", str(default)]
+    assert main(["run", str(bare), "--out", str(tmp_path / "b"), *args]) == 0
     a = (tmp_path / "a" / "items_to_check.csv").read_text("utf-8")
     b = (tmp_path / "b" / "items_to_check.csv").read_text("utf-8")
     assert a == b

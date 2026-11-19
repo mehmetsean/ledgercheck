@@ -4,11 +4,11 @@ Status: Accepted
 
 ## Context
 
-Record 11 left the approval limit as a fixed setting of 500,000 cents, the same value synthbiz writes to manifest.json. If synthbiz changes its limit, the split_under_limit rule would use a stale number. Record 7 says only evaluate.py reads labels.csv and manifest.json, and a test enforces it.
+ADR 0011 left the approval limit as a fixed setting of 500,000 cents, the same value synthbiz writes to manifest.json. If synthbiz changes its limit, the split_under_limit rule would use a stale number. ADR 0007 says only evaluate.py reads labels.csv and manifest.json, and a test enforces it.
 
 ## Options
 
-1. Read the manifest in rules.py. Breaks record 7 and the rules would depend on a synthbiz file.
+1. Read the manifest in rules.py. Breaks ADR 0007 and the rules would depend on a synthbiz file.
 2. Read it in evaluate.py with a small function, read_manifest_limit, and let the CLI pass the value into the settings. Keeps the boundary.
 3. Keep the fixed default. Simple, but it drifts.
 

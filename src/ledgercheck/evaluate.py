@@ -266,7 +266,6 @@ def read_manifest_info(folder: Path) -> dict[str, str] | None:
 
 
 def read_manifest_limit(folder: Path) -> int | None:
-    """approval_limit_cents from manifest.json. None if absent or no manifest."""
     path = folder / "manifest.json"
     if not _safe_file(path, MAX_MANIFEST_BYTES):
         return None
