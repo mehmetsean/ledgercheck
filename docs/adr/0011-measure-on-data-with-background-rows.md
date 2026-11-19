@@ -1,6 +1,6 @@
 # 11. Measure on data with background rows
 
-Status: Accepted
+Status: Accepted. The approval limit part is superseded by ADR 0013.
 
 ## Context
 

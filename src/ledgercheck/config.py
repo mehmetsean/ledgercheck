@@ -106,10 +106,12 @@ def _fill(name: str, data: dict[str, Any], cls: type, skip: set[str]) -> dict[st
     return out
 
 
-def load_settings(path: Path) -> Settings:
+def load_settings(path: Path, data_limit: int | None = None) -> Settings:
     data = _load_json(path)
     name = plain(path.name)
     values = _fill(name, data, Settings, {"extra_holidays", "duplicates"})
+    if data_limit is not None and "approval_limit_cents" not in values:
+        values["approval_limit_cents"] = data_limit
     holidays: list[date] = []
     raw = data.get("extra_holidays", [])
     if not isinstance(raw, list):

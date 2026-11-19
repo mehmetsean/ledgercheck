@@ -31,7 +31,7 @@ Input is a synthbiz output folder in CSV. Another export is mapped to the same c
 | entry_number_gap | missing numbers in the je_id sequence | none, not scored | entry |
 | benford_first_digit | first digit test on one amount field | none, not scored | field |
 
-- Every flag is an item to check with a plain reason, for example "Posted on Saturday 2025-03-08" (synthetic data). No rule reads labels, memo or any synthbiz id or role name. The approval limit is a setting; synthetic mode uses synthbiz's 500,000 cents.
+- Every flag is an item to check with a plain reason, for example "Posted on Saturday 2025-03-08" (synthetic data). No rule reads labels, memo or any synthbiz id or role name. The approval limit is a setting. When the data folder has a synthbiz manifest.json with approval_limit_cents, that value is the default; a settings file wins over it; otherwise the default is 500,000 cents.
 - Benford results carry a status that is printed before the numbers: weak_sample under 5,000 values, not_applicable for id-like or sequential fields (je_id, check numbers), ok otherwise. Mean absolute deviation with the first-digit cutoffs in Nigrini (2012), Benford's Law: Applications for Forensic Accounting, Auditing, and Fraud Detection, plus chi-square with a note that it rejects almost any large sample.
 
 Evaluation harness, the core difference:

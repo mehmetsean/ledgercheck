@@ -168,7 +168,7 @@ def clean_lines() -> list[str]:
     return [
         "### Clean ledger",
         "",
-        "synthbiz with anomaly rate 0 and the default seed, then `ledgercheck run`. "
+        "synthbiz with anomaly rate 0 and seed 42, then `ledgercheck run`. "
         f"Items to check: {sum(counts.values())}. Rules with items:",
         "",
         *count_lines(counts),

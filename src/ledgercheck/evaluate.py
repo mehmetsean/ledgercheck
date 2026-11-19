@@ -10,6 +10,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from .config import MAX_SETTING
 from .duplicates import find_duplicates
 from .io import MAX_FILE_BYTES, MAX_ROWS_PER_FILE, plain, read_folder
 from .models import (
@@ -262,6 +263,26 @@ def read_manifest_info(folder: Path) -> dict[str, str] | None:
         }
     except (ValueError, KeyError, TypeError, RecursionError, OSError):
         raise ValueError("manifest.json could not be read") from None
+
+
+def read_manifest_limit(folder: Path) -> int | None:
+    path = folder / "manifest.json"
+    if not _safe_file(path, MAX_MANIFEST_BYTES):
+        return None
+    try:
+        data = json.loads(path.read_text("utf-8"))
+        if not isinstance(data, dict):
+            raise TypeError
+        if "approval_limit_cents" not in data:
+            return None
+        value = data["approval_limit_cents"]
+    except (ValueError, TypeError, RecursionError, OSError):
+        raise ValueError("manifest.json could not be read") from None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError("manifest.json: approval_limit_cents must be an integer")
+    if not 0 < value <= MAX_SETTING:
+        raise ValueError("manifest.json: approval_limit_cents is out of range")
+    return value
 
 
 def labels_from_dataset(rows: Sequence[dict[str, str]]) -> list[Label]:
