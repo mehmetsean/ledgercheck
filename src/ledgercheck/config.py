@@ -163,6 +163,7 @@ def _check_ranges(name: str, s: Settings) -> None:
         "split_window_days": s.split_window_days,
         "window_days": d.window_days,
         "max_cell_steps": d.max_cell_steps,
+        "recurring_min_count": d.recurring_min_count,
     }
     for key, value in whole.items():
         if abs(value) > MAX_SETTING:
@@ -185,6 +186,10 @@ def _check_ranges(name: str, s: Settings) -> None:
         (0 <= d.name_threshold <= 1, "name_threshold must be from 0 to 1"),
         (0 <= d.invoice_threshold <= 1, "invoice_threshold must be from 0 to 1"),
         (d.max_cell_steps >= 1, "max_cell_steps must be at least 1"),
+        (
+            d.recurring_min_count == 0 or d.recurring_min_count >= 2,
+            "recurring_min_count must be 0 or at least 2",
+        ),
     ]
     for ok, message in checks:
         if not ok:
