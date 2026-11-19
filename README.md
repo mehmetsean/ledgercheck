@@ -66,7 +66,7 @@ The run writes items_to_check.csv, analysis.md, analysis.html and README.txt. Th
 | entry_number_gap | A missing number in the journal entry id sequence. Not scored. |
 | benford_first_digit | A first digit table for one amount field, printed with a status line (weak_sample, not_applicable or ok). Not scored. |
 
-The approval limit, the round step, the windows and the thresholds are settings. Pass a JSON file with `--settings`. A JSON column map (`--column-map`) lets you read an export that does not use synthbiz column names.
+The approval limit, the round step, the windows and the thresholds are settings. Pass a JSON file with `--settings`. If the data folder has a synthbiz `manifest.json` with `approval_limit_cents`, `run` and `evaluate` use that value as the approval limit. A value in the settings file wins over the manifest, and without a manifest the default of 500,000 cents applies. A JSON column map (`--column-map`) lets you read an export that does not use synthbiz column names.
 
 ## Check the numbers
 
@@ -164,7 +164,7 @@ typo_duplicate_payment: 549 of 780 labeled payments are flagged by a scored rule
 
 ### Clean ledger
 
-synthbiz with anomaly rate 0 and the default seed, then `ledgercheck run`. Items to check: 169. Rules with items:
+synthbiz with anomaly rate 0 and seed 42, then `ledgercheck run`. Items to check: 169. Rules with items:
 
 - duplicate_fuzzy: 41
 - holiday_posting: 11
