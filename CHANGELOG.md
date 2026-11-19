@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows Keep a Changelog.
 
 ### Added
 
+- The close_window_days setting: an entry posted this many days into a month or earlier, with the previous month as its period, is not flagged by period_mismatch. The default is 0, so no measured number changes. See docs/adr/0015-close-window-days.md.
+- scripts/measure_close_window.py, which scores period_mismatch for several windows.
 - The rare_skip_users setting: user ids that rare_poster never flags. The default is empty, so no measured number changes. See docs/adr/0014-rare-poster-skip-list.md.
 - scripts/measure_skip_users.py, which scores rare_poster with and without the system user skip list.
 
