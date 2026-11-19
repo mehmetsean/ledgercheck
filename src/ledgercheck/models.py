@@ -99,7 +99,7 @@ class Settings:
         or batch users. Their entries still count toward the source type total.
     close_window_days: 0. An entry posted on this day of the month or earlier
         with the previous month as its period is normal close activity and is
-        not flagged by period_mismatch. 0 turns it off. Most 31.
+        not flagged by period_mismatch. 0 turns it off. Maximum 31.
     split_window_days: 7. Invoices of one vendor this close together can form a group.
     split_band: 0.3. "Just under the limit" means within this share below it.
     extra_holidays: none. Dates added to the US federal holiday calendar.
