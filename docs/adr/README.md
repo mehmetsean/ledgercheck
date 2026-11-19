@@ -15,3 +15,4 @@
 - [0013 The approval limit comes from manifest.json when present](0013-approval-limit-from-the-manifest.md)
 - [0014 rare_poster has a skip list for system users](0014-rare-poster-skip-list.md)
 - [0015 period_mismatch has a close window](0015-close-window-days.md)
+- [0016 duplicate_fuzzy can skip recurring same-amount series](0016-recurring-series-skip-for-fuzzy-duplicates.md)
